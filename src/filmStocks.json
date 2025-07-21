@@ -1,0 +1,18 @@
+{
+  "ultramax-400": {
+    "friendlyName": "Kodak Ultramax 400",
+    "accentColor": "#FF6B35"
+  },
+  "gold-200": {
+    "friendlyName": "Kodak Gold 200",
+    "accentColor": "#FFD700"
+  },
+  "hp5": {
+    "friendlyName": "Ilford HP5 Plus",
+    "accentColor": "#2C2C2C"
+  },
+  "kentmere-400": {
+    "friendlyName": "Kentmere 400",
+    "accentColor": "#4A4A4A"
+  }
+}

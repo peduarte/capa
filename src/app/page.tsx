@@ -1,103 +1,300 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { ContactSheet } from './contact-sheet/components/ContactSheet';
+import { DownloadButton } from './contact-sheet/components/DownloadButton';
+import {
+  ContactSheetProvider,
+  useContactSheet,
+} from './contact-sheet/context/ContactSheetContext';
+import {
+  convertFilesToObjectUrls,
+  getValidImages,
+  getErrors,
+  revokeObjectUrls,
+} from './contact-sheet/utils/imageUtils';
+import { HighlightType } from './contact-sheet/utils/constants';
+
+function ContactSheetPageContent() {
+  const {
+    frameHighlights,
+    xMarkedFrames,
+    setFrameHighlight,
+    setXMark,
+    clearFrameHighlight,
+    clearXMark,
+    clearAllHighlights,
+    contactSheetRef,
+  } = useContactSheet();
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [keysPressed, setKeysPressed] = useState<Set<string>>(new Set());
+  const [errors, setErrors] = useState<string[]>([]);
+  const [showDemo, setShowDemo] = useState(true); // Start with demo shown
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Demo image list (complete list from prototype)
+  const demoImageList = useMemo(
+    () => [
+      '000000160024.jpeg',
+      '000000180006.jpeg',
+      '000004310026.jpeg',
+      '000004340020.jpeg',
+      '000004350036.jpeg',
+      '000004350039.jpeg',
+      '000004360009.jpeg',
+      '000004390004.jpeg',
+      '000004390011.jpeg',
+      '000014740026.jpeg',
+      '000014750008.jpeg',
+      '000014800037.jpeg',
+      '000016800013.jpeg',
+      '000016800019.jpeg',
+      '000016800023.jpeg',
+      '000019050039.jpeg',
+      '000019670023.jpeg',
+      '000028.jpeg',
+      '000032250013.jpeg',
+      '000036270021.jpeg',
+      '000790--005--VK.jpeg',
+      '000790--026--VK.jpeg',
+      '000791--003--VK.jpeg',
+      '000791--022--VK.jpeg',
+      '000791--028--VK.jpeg',
+      '000811--004--VK.jpeg',
+      '002364--017--VK.jpeg',
+      '008229--027--VK.jpeg',
+      '008281--009--VK.jpeg',
+      '008325--016--VK.jpeg',
+      '008325--020--VK.jpeg',
+      '25530026.jpeg',
+      'IMG_1078.jpeg',
+      'IMG_6347.jpeg',
+      'IMG_6377.jpeg',
+      'IMG_6476.jpeg',
+      'IMG_7136.jpeg',
+      'IMG_7138.jpeg',
+    ],
+    []
+  );
+
+  // Use uploaded images if available, otherwise demo images if enabled
+  const currentImages =
+    uploadedImages.length > 0 ? uploadedImages : showDemo ? demoImageList : [];
+
+  // Global drag and drop handlers
+  const processFiles = useCallback(async (files: FileList | File[]) => {
+    if (files.length === 0) return;
+
+    if (files.length > 50) {
+      setErrors(['Too many files selected. Maximum is 50 images.']);
+      return;
+    }
+
+    setIsProcessing(true);
+    setErrors([]);
+
+    try {
+      const results = await convertFilesToObjectUrls(files);
+      const validImages = getValidImages(results);
+      const fileErrors = getErrors(results);
+
+      if (validImages.length > 0) {
+        // Clean up previous object URLs before setting new ones
+        revokeObjectUrls(uploadedImages);
+        setUploadedImages(validImages);
+        setShowDemo(false);
+        // Clear highlights when new images are loaded
+        clearAllHighlights();
+      }
+
+      if (fileErrors.length > 0) {
+        setErrors(fileErrors);
+      }
+
+      if (validImages.length === 0 && fileErrors.length === 0) {
+        setErrors(['No valid images found.']);
+      }
+    } catch (error) {
+      setErrors(['An error occurred while processing your images.']);
+      console.error('File processing error:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      setKeysPressed(prev => new Set(prev).add(event.key.toLowerCase()));
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      setKeysPressed(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(event.key.toLowerCase());
+        return newSet;
+      });
+    };
+
+    const handleGlobalDragOver = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.dataTransfer?.types.includes('Files')) {
+        setIsDragOver(true);
+      }
+    };
+
+    const handleGlobalDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // Only hide if leaving the window entirely
+      if (!e.relatedTarget) {
+        setIsDragOver(false);
+      }
+    };
+
+    const handleGlobalDrop = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(false);
+
+      if (e.dataTransfer?.files) {
+        processFiles(e.dataTransfer.files);
+      }
+    };
+
+    // Add global event listeners - these will only be registered ONCE
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('dragover', handleGlobalDragOver);
+    window.addEventListener('dragleave', handleGlobalDragLeave);
+    window.addEventListener('drop', handleGlobalDrop);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('dragover', handleGlobalDragOver);
+      window.removeEventListener('dragleave', handleGlobalDragLeave);
+      window.removeEventListener('drop', handleGlobalDrop);
+    };
+  }, [processFiles]); // Only depend on processFiles which is stable with useCallback
+
+  // Cleanup Object URLs when component unmounts to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      revokeObjectUrls(uploadedImages);
+    };
+  }, [uploadedImages]);
+
+  const handleFrameClick = (frameNumber: number, event: React.MouseEvent) => {
+    // Get the clicked frame element to capture its position
+    const target = event.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    const containerRect = contactSheetRef.current?.getBoundingClientRect();
+
+    if (!containerRect) return;
+
+    // Calculate position relative to the contact sheet container
+    const position = {
+      left: rect.left - containerRect.left,
+      top: rect.top - containerRect.top,
+      width: rect.width,
+      height: rect.height,
+    };
+
+    if (keysPressed.has('x')) {
+      // Handle X marking
+      if (xMarkedFrames.has(frameNumber)) {
+        clearXMark(frameNumber);
+      } else {
+        setXMark(frameNumber, position);
+      }
+    } else {
+      // Handle normal highlights (rectangle/circle)
+      const highlightType = event.altKey ? 'circle' : 'rectangle';
+
+      if (frameHighlights.has(frameNumber)) {
+        clearFrameHighlight(frameNumber);
+      } else {
+        setFrameHighlight(frameNumber, position, highlightType);
+      }
+    }
+  };
+
+  return (
+    <div className="min-h-screen relative">
+      {/* Sticky Top Navigation Bar */}
+      <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-sm border-b border-gray-700/50">
+        <div className="flex items-center justify-between px-6 py-4">
+          {/* Left: Guidance Text */}
+          <span className="text-sm text-gray-300">
+            Drag your images anywhere to create your own contact sheet
+          </span>
+
+          {/* Right: Download Button - only enabled when user uploads images */}
+          <DownloadButton
+            contactSheetRef={contactSheetRef}
+            disabled={isProcessing || isDragOver || uploadedImages.length === 0}
+          />
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="p-8">
+        {/* Drag Overlay */}
+        {isDragOver && (
+          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+            <div className="py-8 px-12 border-1 border-dashed border-white/50">
+              <div className="text-center">
+                <h3 className="text-l font-semibold ">Let your frames go</h3>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Processing Overlay */}
+        {isProcessing && (
+          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+            <div className="py-8 px-12 border-1 border-dashed border-white/50">
+              <div className="text-center">
+                <h3 className="text-l font-semibold ">
+                  Creating your contact sheet...
+                </h3>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="min-h-screen flex flex-col justify-center items-center">
+          {/* Error Display - only show if errors exist */}
+          {errors.length > 0 && (
+            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg max-w-md">
+              <ul className="text-red-700 dark:text-red-300 text-sm space-y-1">
+                {errors.map((error, index) => (
+                  <li key={index}>• {error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Contact Sheet - Centered vertically */}
+          <div ref={contactSheetRef} className="contact-sheet-container">
+            <ContactSheet
+              images={currentImages}
+              showHighlights={true}
+              onFrameClick={handleFrameClick}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Home() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+    <ContactSheetProvider>
+      <ContactSheetPageContent />
+    </ContactSheetProvider>
   );
 }
