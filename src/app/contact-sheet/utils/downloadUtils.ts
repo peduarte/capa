@@ -13,6 +13,7 @@ const convertBlobUrlsToDataUrls = async (
   element: HTMLElement
 ): Promise<() => void> => {
   const images = element.querySelectorAll('img');
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
   const conversions: Array<{
     img: HTMLImageElement;
@@ -21,33 +22,64 @@ const convertBlobUrlsToDataUrls = async (
   }> = [];
 
   for (const img of Array.from(images)) {
-    if (img.src.startsWith('blob:')) {
+    // For Safari, convert ALL images to data URLs, not just blob URLs
+    const needsConversion = isSafari || img.src.startsWith('blob:');
+
+    if (needsConversion) {
       try {
-        // Fetch the blob and convert to data URL
-        const response = await fetch(img.src);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch blob: ${response.status}`);
+        let dataUrl: string;
+
+        if (img.src.startsWith('blob:')) {
+          // Convert blob URL to data URL
+          const response = await fetch(img.src);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch blob: ${response.status}`);
+          }
+
+          const blob = await response.blob();
+          dataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onerror = () =>
+              reject(new Error('Failed to read blob as data URL'));
+
+            // Add timeout for Safari
+            const timeout = setTimeout(() => {
+              reject(new Error('Blob conversion timeout'));
+            }, 10000);
+
+            reader.onload = () => {
+              clearTimeout(timeout);
+              resolve(reader.result as string);
+            };
+
+            reader.readAsDataURL(blob);
+          });
+        } else {
+          // For Safari: Convert regular URLs to data URLs by drawing to canvas
+          dataUrl = await new Promise<string>((resolve, reject) => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const tempImg = new Image();
+
+            tempImg.crossOrigin = 'anonymous';
+
+            tempImg.onload = () => {
+              canvas.width = tempImg.naturalWidth;
+              canvas.height = tempImg.naturalHeight;
+              ctx?.drawImage(tempImg, 0, 0);
+
+              try {
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                resolve(dataUrl);
+              } catch (e) {
+                reject(new Error('Canvas conversion failed'));
+              }
+            };
+
+            tempImg.onerror = () => reject(new Error('Image load failed'));
+            tempImg.src = img.src;
+          });
         }
-
-        const blob = await response.blob();
-
-        const dataUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onerror = () =>
-            reject(new Error('Failed to read blob as data URL'));
-
-          // Add timeout for Safari
-          const timeout = setTimeout(() => {
-            reject(new Error('Blob conversion timeout'));
-          }, 10000);
-
-          reader.onload = () => {
-            clearTimeout(timeout);
-            resolve(reader.result as string);
-          };
-
-          reader.readAsDataURL(blob);
-        });
 
         conversions.push({
           img,
@@ -57,16 +89,26 @@ const convertBlobUrlsToDataUrls = async (
 
         // Temporarily replace with data URL
         img.src = dataUrl;
+
+        // Ensure image is marked as loaded
+        await new Promise(resolve => {
+          if (img.complete) {
+            resolve(img);
+          } else {
+            img.onload = () => resolve(img);
+            img.onerror = () => resolve(img);
+          }
+        });
       } catch (error) {
-        console.warn('Failed to convert blob URL for image:', img.src, error);
-        throw new Error(
-          `Failed to convert image: ${
-            error instanceof Error ? error.message : 'Unknown error'
-          }`
-        );
+        console.warn('Failed to convert image:', img.src, error);
+        // Continue with other images rather than failing completely
       }
     }
   }
+
+  console.log(
+    `Converted ${conversions.length} images for Safari compatibility`
+  );
 
   // Return cleanup function to restore original URLs
   return () => {
@@ -148,11 +190,16 @@ export const downloadContactSheet = async (
     // Extra wait for Safari to ensure all images are fully rendered
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
     if (isSafari) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Increased wait for Safari
     }
 
     // Convert blob URLs to data URLs temporarily for html-to-image compatibility
     cleanup = await convertBlobUrlsToDataUrls(element);
+
+    // Additional wait after conversions for Safari
+    if (isSafari) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
 
     // Wait a bit for images to load
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -175,8 +222,10 @@ export const downloadContactSheet = async (
       // Safari-specific options
       ...(isSafari && {
         useCORS: true,
-        allowTaint: true,
+        allowTaint: false, // Changed to false for better Safari compatibility
         scale: 1,
+        skipFonts: false,
+        preferredFontFormat: 'woff2',
       }),
     };
 
