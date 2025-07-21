@@ -33,9 +33,19 @@ const convertBlobUrlsToDataUrls = async (
 
         const dataUrl = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
           reader.onerror = () =>
             reject(new Error('Failed to read blob as data URL'));
+
+          // Add timeout for Safari
+          const timeout = setTimeout(() => {
+            reject(new Error('Blob conversion timeout'));
+          }, 10000);
+
+          reader.onload = () => {
+            clearTimeout(timeout);
+            resolve(reader.result as string);
+          };
+
           reader.readAsDataURL(blob);
         });
 
@@ -128,30 +138,50 @@ export const downloadContactSheet = async (
       );
     }
 
+    // Safari-specific: Ensure all images have crossOrigin set for blob URLs
+    Array.from(images).forEach(img => {
+      if (img.src.startsWith('blob:') && !img.crossOrigin) {
+        img.crossOrigin = 'anonymous';
+      }
+    });
+
+    // Extra wait for Safari to ensure all images are fully rendered
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    if (isSafari) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
     // Convert blob URLs to data URLs temporarily for html-to-image compatibility
     cleanup = await convertBlobUrlsToDataUrls(element);
 
     // Wait a bit for images to load
     await new Promise(resolve => setTimeout(resolve, 100));
 
-    // Create a promise with timeout for the image generation
-    const imageGeneration = toPng(element, {
+    const imageOptions = {
       quality,
       pixelRatio,
       backgroundColor,
       filter,
       cacheBust: true,
-      width: rect.width + 100, // Add 100px total (50px padding on each side)
-      height: rect.height + 100, // Add 100px total (50px padding on each side)
+      width: rect.width + 100,
+      height: rect.height + 100,
       style: {
-        // Center the contact sheet with 50px padding
         transform: 'scale(1)',
         transformOrigin: 'top left',
-        margin: '50px', // 50px margin on all sides creates the padding
+        margin: '50px',
         position: 'relative',
         display: 'block',
       },
-    });
+      // Safari-specific options
+      ...(isSafari && {
+        useCORS: true,
+        allowTaint: true,
+        scale: 1,
+      }),
+    };
+
+    // Create a promise with timeout for the image generation
+    const imageGeneration = toPng(element, imageOptions);
 
     const timeout = new Promise<never>((_, reject) =>
       setTimeout(
@@ -182,9 +212,16 @@ export const downloadContactSheet = async (
 
     // Provide more specific error messages
     let errorMessage = 'Unknown error';
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
     if (error instanceof Error) {
       errorMessage = error.message;
+
+      // Safari-specific guidance
+      if (isSafari && error.message.includes('Failed to convert')) {
+        errorMessage =
+          'Safari download issue - try using Chrome or Firefox for better compatibility';
+      }
     } else if (typeof error === 'string') {
       errorMessage = error;
     } else if (error && typeof error === 'object') {

@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import Image from 'next/image';
 import { SprocketHoles } from './SprocketHoles';
 import {
   MEASUREMENTS,
@@ -204,7 +203,7 @@ export const NegativeStrip = React.memo(
                 }
               >
                 {imagePath && (
-                  <Image
+                  <img
                     src={
                       imagePath.startsWith('blob:') ||
                       imagePath.startsWith('data:') ||
@@ -213,9 +212,15 @@ export const NegativeStrip = React.memo(
                         : `/hp5/${imagePath}`
                     }
                     alt={`Frame ${imageIndex + 1}`}
-                    fill
                     className="object-cover"
-                    unoptimized={imagePath.startsWith('blob:')} // Skip optimization for blob URLs
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                    }}
+                    crossOrigin="anonymous"
                   />
                 )}
               </div>
