@@ -36,8 +36,10 @@ export const validateImageFile = (
   return { valid: true };
 };
 
-export const convertFileToObjectUrl = (file: File): Promise<ImageValidationResult> => {
-  return new Promise((resolve) => {
+export const convertFileToObjectUrl = (
+  file: File
+): Promise<ImageValidationResult> => {
+  return new Promise(resolve => {
     const validation = validateImageFile(file);
     if (!validation.valid) {
       resolve(validation);
@@ -46,7 +48,7 @@ export const convertFileToObjectUrl = (file: File): Promise<ImageValidationResul
 
     // Create Object URL - much more efficient than data URL
     const objectUrl = URL.createObjectURL(file);
-    
+
     // Check image dimensions
     const img = new Image();
     img.onload = () => {
@@ -65,7 +67,7 @@ export const convertFileToObjectUrl = (file: File): Promise<ImageValidationResul
         objectUrl,
       });
     };
-    
+
     img.onerror = () => {
       URL.revokeObjectURL(objectUrl); // Clean up
       resolve({
@@ -73,7 +75,7 @@ export const convertFileToObjectUrl = (file: File): Promise<ImageValidationResul
         error: 'Invalid image file or corrupted data.',
       });
     };
-    
+
     img.src = objectUrl;
   });
 };

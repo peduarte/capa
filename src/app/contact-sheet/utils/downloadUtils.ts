@@ -9,9 +9,15 @@ export interface DownloadOptions {
 }
 
 // Helper function to temporarily convert blob URLs to data URLs for download compatibility
-const convertBlobUrlsToDataUrls = async (element: HTMLElement): Promise<() => void> => {
+const convertBlobUrlsToDataUrls = async (
+  element: HTMLElement
+): Promise<() => void> => {
   const images = element.querySelectorAll('img');
-  const conversions: Array<{ img: HTMLImageElement; originalSrc: string; newSrc: string }> = [];
+  const conversions: Array<{
+    img: HTMLImageElement;
+    originalSrc: string;
+    newSrc: string;
+  }> = [];
 
   for (const img of Array.from(images)) {
     if (img.src.startsWith('blob:')) {
@@ -19,7 +25,7 @@ const convertBlobUrlsToDataUrls = async (element: HTMLElement): Promise<() => vo
         // Fetch the blob and convert to data URL
         const response = await fetch(img.src);
         const blob = await response.blob();
-        const dataUrl = await new Promise<string>((resolve) => {
+        const dataUrl = await new Promise<string>(resolve => {
           const reader = new FileReader();
           reader.onload = () => resolve(reader.result as string);
           reader.readAsDataURL(blob);
@@ -56,11 +62,11 @@ export const downloadContactSheet = async (
     quality = 1.0,
     pixelRatio = 2,
     backgroundColor = '#000000',
-    filter = (node) => {
+    filter = node => {
       if (node.tagName) {
         const tagName = node.tagName.toLowerCase();
         if (tagName === 'button') return false;
-        
+
         try {
           const element = node as HTMLElement;
           const styles = window.getComputedStyle(element);
@@ -97,7 +103,6 @@ export const downloadContactSheet = async (
       backgroundColor,
       filter,
       cacheBust: true,
-      useCORS: true,
       width: rect.width + 100, // Add 100px total (50px padding on each side)
       height: rect.height + 100, // Add 100px total (50px padding on each side)
       style: {
@@ -116,14 +121,15 @@ export const downloadContactSheet = async (
     link.href = dataUrl;
     document.body.appendChild(link);
     link.click();
-    
+
     setTimeout(() => {
       document.body.removeChild(link);
     }, 100);
-
   } catch (error) {
     console.error('Download error:', error);
-    throw new Error(`Download failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Download failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   } finally {
     // Always restore original URLs
     if (cleanup) {
@@ -141,11 +147,11 @@ export const downloadContactSheetJPEG = async (
     quality = 0.95,
     pixelRatio = 2,
     backgroundColor = '#000000',
-    filter = (node) => {
+    filter = node => {
       if (node.tagName) {
         const tagName = node.tagName.toLowerCase();
         if (tagName === 'button') return false;
-        
+
         try {
           const element = node as HTMLElement;
           const styles = window.getComputedStyle(element);
@@ -160,7 +166,7 @@ export const downloadContactSheetJPEG = async (
 
   try {
     const rect = element.getBoundingClientRect();
-    
+
     const dataUrl = await toJpeg(element, {
       quality,
       pixelRatio,
@@ -176,7 +182,9 @@ export const downloadContactSheetJPEG = async (
     link.remove();
   } catch (error) {
     console.error('Failed to download contact sheet as JPEG:', error);
-    throw new Error('Failed to generate contact sheet image. Please try again.');
+    throw new Error(
+      'Failed to generate contact sheet image. Please try again.'
+    );
   }
 };
 
@@ -188,11 +196,11 @@ export const getContactSheetDataUrl = async (
     quality = 1.0,
     pixelRatio = 2,
     backgroundColor = '#000000',
-    filter = (node) => {
+    filter = node => {
       if (node.tagName) {
         const tagName = node.tagName.toLowerCase();
         if (tagName === 'button') return false;
-        
+
         try {
           const element = node as HTMLElement;
           const styles = window.getComputedStyle(element);
