@@ -13,6 +13,7 @@ const convertBlobUrlsToDataUrls = async (
   element: HTMLElement
 ): Promise<() => void> => {
   const images = element.querySelectorAll('img');
+
   const conversions: Array<{
     img: HTMLImageElement;
     originalSrc: string;
@@ -24,10 +25,17 @@ const convertBlobUrlsToDataUrls = async (
       try {
         // Fetch the blob and convert to data URL
         const response = await fetch(img.src);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch blob: ${response.status}`);
+        }
+
         const blob = await response.blob();
-        const dataUrl = await new Promise<string>(resolve => {
+
+        const dataUrl = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () =>
+            reject(new Error('Failed to read blob as data URL'));
           reader.readAsDataURL(blob);
         });
 
@@ -41,6 +49,11 @@ const convertBlobUrlsToDataUrls = async (
         img.src = dataUrl;
       } catch (error) {
         console.warn('Failed to convert blob URL for image:', img.src, error);
+        throw new Error(
+          `Failed to convert image: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`
+        );
       }
     }
   }
@@ -91,13 +104,38 @@ export const downloadContactSheet = async (
       throw new Error('Contact sheet element has no dimensions');
     }
 
+    // Check if contact sheet has any images
+    const images = element.querySelectorAll('img');
+    if (images.length === 0) {
+      throw new Error('No images found in contact sheet');
+    }
+
+    // Check if any images are still loading
+    const unloadedImages = Array.from(images).filter(img => !img.complete);
+    if (unloadedImages.length > 0) {
+      // Wait for images to load
+      await Promise.all(
+        unloadedImages.map(
+          img =>
+            new Promise(resolve => {
+              if (img.complete) resolve(img);
+              img.onload = () => resolve(img);
+              img.onerror = () => resolve(img); // Continue even if image fails to load
+              // Timeout after 5 seconds
+              setTimeout(() => resolve(img), 5000);
+            })
+        )
+      );
+    }
+
     // Convert blob URLs to data URLs temporarily for html-to-image compatibility
     cleanup = await convertBlobUrlsToDataUrls(element);
 
     // Wait a bit for images to load
     await new Promise(resolve => setTimeout(resolve, 100));
 
-    const dataUrl = await toPng(element, {
+    // Create a promise with timeout for the image generation
+    const imageGeneration = toPng(element, {
       quality,
       pixelRatio,
       backgroundColor,
@@ -115,6 +153,20 @@ export const downloadContactSheet = async (
       },
     });
 
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(
+        () =>
+          reject(
+            new Error(
+              'Download timeout - try with fewer images or lower quality'
+            )
+          ),
+        30000
+      )
+    );
+
+    const dataUrl = await Promise.race([imageGeneration, timeout]);
+
     // Create download link
     const link = document.createElement('a');
     link.download = filename;
@@ -126,10 +178,24 @@ export const downloadContactSheet = async (
       document.body.removeChild(link);
     }, 100);
   } catch (error) {
-    console.error('Download error:', error);
-    throw new Error(
-      `Download failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-    );
+    console.error('Download failed:', error);
+
+    // Provide more specific error messages
+    let errorMessage = 'Unknown error';
+
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'string') {
+      errorMessage = error;
+    } else if (error && typeof error === 'object') {
+      try {
+        errorMessage = JSON.stringify(error);
+      } catch {
+        errorMessage = String(error);
+      }
+    }
+
+    throw new Error(`Download failed: ${errorMessage}`);
   } finally {
     // Always restore original URLs
     if (cleanup) {

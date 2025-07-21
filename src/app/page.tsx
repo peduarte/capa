@@ -32,6 +32,7 @@ function ContactSheetPageContent() {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadedImagesRef = useRef<string[]>([]); // Track images for cleanup
 
   // Demo image list (complete list from prototype)
   const demoImageList = useMemo(
@@ -87,6 +88,7 @@ function ContactSheetPageContent() {
     // Clean up existing object URLs
     revokeObjectUrls(uploadedImages);
     setUploadedImages([]);
+    uploadedImagesRef.current = []; // Update ref
     setShowDemo(true);
     setErrors([]);
     clearAllHighlights();
@@ -131,6 +133,10 @@ function ContactSheetPageContent() {
         if (validImages.length > 0) {
           // Append new images to existing ones (don't replace)
           setUploadedImages(prev => [...prev, ...validImages]);
+          uploadedImagesRef.current = [
+            ...uploadedImagesRef.current,
+            ...validImages,
+          ]; // Update ref
           setShowDemo(false);
           // Clear highlights when new images are added
           clearAllHighlights();
@@ -210,11 +216,12 @@ function ContactSheetPageContent() {
   }, [processFiles]); // Only depend on processFiles which is stable with useCallback
 
   // Cleanup Object URLs when component unmounts to prevent memory leaks
+  // Don't cleanup on uploadedImages changes or it will revoke URLs before download
   useEffect(() => {
     return () => {
-      revokeObjectUrls(uploadedImages);
+      revokeObjectUrls(uploadedImagesRef.current);
     };
-  }, [uploadedImages]);
+  }, []); // Empty dependency array - only cleanup on unmount
 
   const handleFrameClick = (frameNumber: number, event: React.MouseEvent) => {
     // Get the clicked frame element to capture its position

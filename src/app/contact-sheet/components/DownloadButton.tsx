@@ -22,6 +22,10 @@ export const DownloadButton = ({
     setError(null);
 
     try {
+      // Wait a bit longer to ensure contact sheet is fully rendered
+      // This is especially important when images were just added
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       // Generate filename with timestamp
       const timestamp = new Date()
         .toISOString()
@@ -36,10 +40,22 @@ export const DownloadButton = ({
         backgroundColor: '#000000', // Black background like film
       });
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : 'Download failed';
+      console.error('Download error details:', err);
+
+      // Better error handling with more specific messages
+      let errorMessage = 'Download failed';
+
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      } else if (err && typeof err === 'object' && 'message' in err) {
+        errorMessage = String(err.message);
+      } else {
+        errorMessage = 'Unknown error occurred. Check console for details.';
+      }
+
       setError(errorMessage);
-      console.error('Download error:', err);
     } finally {
       setIsDownloading(false);
     }
@@ -61,8 +77,11 @@ export const DownloadButton = ({
 
       {/* Error tooltip */}
       {error && (
-        <div className="absolute bottom-full right-0 mb-2 p-2 bg-red-600 text-white text-sm rounded shadow-lg whitespace-nowrap z-50">
-          {error}
+        <div className="absolute bottom-full right-0 mb-2 p-3 bg-red-600 text-white text-sm rounded shadow-lg max-w-xs z-50">
+          <div className="font-medium">{error}</div>
+          <div className="text-xs mt-1 opacity-90">
+            Try refreshing the page or re-uploading your images
+          </div>
           <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-red-600" />
         </div>
       )}
