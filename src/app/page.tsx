@@ -13,7 +13,6 @@ import {
   getErrors,
   revokeObjectUrls,
 } from './contact-sheet/utils/imageUtils';
-import { HighlightType } from './contact-sheet/utils/constants';
 
 function ContactSheetPageContent() {
   const {
