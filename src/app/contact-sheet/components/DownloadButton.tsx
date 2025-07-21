@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { downloadContactSheet } from '../utils/downloadUtils';
+import { toPng } from '../utils/image';
+import download from '../utils/download';
 
 interface DownloadButtonProps {
   contactSheetRef: React.RefObject<HTMLElement | null>;
@@ -22,10 +23,6 @@ export const DownloadButton = ({
     setError(null);
 
     try {
-      // Wait a bit longer to ensure contact sheet is fully rendered
-      // This is especially important when images were just added
-      await new Promise(resolve => setTimeout(resolve, 500));
-
       // Generate filename with timestamp
       const timestamp = new Date()
         .toISOString()
@@ -33,26 +30,25 @@ export const DownloadButton = ({
         .replace(/:/g, '-');
       const filename = `contact-sheet-${timestamp}.png`;
 
-      await downloadContactSheet(contactSheetRef.current, {
-        filename,
-        pixelRatio: 2, // High resolution
-        quality: 1.0,
-        backgroundColor: '#000000', // Black background like film
-      });
+      // Generate image using ray-so inspired approach
+      const dataUrl = await toPng(contactSheetRef.current);
+
+      // Download using simple utility
+      download(dataUrl, filename);
     } catch (err) {
-      console.error('Download error details:', err);
+      console.error('Download error:', err);
 
-      // Better error handling with more specific messages
+      // Extract meaningful error message
       let errorMessage = 'Download failed';
-
       if (err instanceof Error) {
-        errorMessage = err.message;
-      } else if (typeof err === 'string') {
-        errorMessage = err;
-      } else if (err && typeof err === 'object' && 'message' in err) {
-        errorMessage = String(err.message);
-      } else {
-        errorMessage = 'Unknown error occurred. Check console for details.';
+        if (err.message.includes('CORS')) {
+          errorMessage =
+            'Image loading blocked. Try refreshing and uploading images again.';
+        } else if (err.message.includes('canvas')) {
+          errorMessage = 'Canvas rendering failed. Please try again.';
+        } else {
+          errorMessage = err.message || 'Unknown error occurred';
+        }
       }
 
       setError(errorMessage);

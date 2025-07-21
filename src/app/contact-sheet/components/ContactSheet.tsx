@@ -1,6 +1,7 @@
 import React from 'react';
 import { NegativeStrip } from './NegativeStrip';
 import { HighlightOverlay } from './HighlightOverlay';
+import useIsSafari from '../hooks/useIsSafari';
 
 interface ContactSheetProps {
   images: string[];
@@ -16,6 +17,7 @@ export const ContactSheet = React.memo(
     onFrameClick,
     className,
   }: ContactSheetProps) => {
+    const isSafari = useIsSafari();
     return (
       <div
         className={`w-fit mx-auto relative ${className || ''}`}
@@ -27,6 +29,7 @@ export const ContactSheet = React.memo(
             images={images}
             startIndex={i * 6}
             onFrameClick={onFrameClick}
+            isSafari={isSafari}
           />
         ))}
         {showHighlights && <HighlightOverlay />}

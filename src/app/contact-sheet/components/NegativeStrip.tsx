@@ -11,10 +11,11 @@ interface NegativeStripProps {
   images: string[];
   startIndex: number;
   onFrameClick?: (frameNumber: number, event: React.MouseEvent) => void;
+  isSafari?: boolean;
 }
 
 export const NegativeStrip = React.memo(
-  ({ images, startIndex, onFrameClick }: NegativeStripProps) => {
+  ({ images, startIndex, onFrameClick, isSafari = false }: NegativeStripProps) => {
     // Calculate values first
     const framesInStrip = Math.min(6, images.length - startIndex);
     const stripIndex = Math.floor(startIndex / 6);
@@ -44,54 +45,59 @@ export const NegativeStrip = React.memo(
           width: stripWidth,
           transform: `rotate(${rotation}deg)`,
           transformOrigin: 'center center',
-          boxShadow:
-            '1px -1px 0px rgba(255, 255, 255, 0.09), -1px 1px 0px rgba(255, 255, 255, 0.05)',
+          // Remove complex box-shadow for Safari compatibility
+          ...(isSafari 
+            ? { border: '1px solid rgba(255, 255, 255, 0.1)' }
+            : { boxShadow: '1px -1px 0px rgba(255, 255, 255, 0.09), -1px 1px 0px rgba(255, 255, 255, 0.05)' }
+          ),
           userSelect: 'none',
         }}
       >
-        {/* SVG noise filter - scoped to this strip */}
-        <svg
-          className="absolute inset-0 pointer-events-none z-10"
-          width="100%"
-          height="100%"
-        >
-          <defs>
-            <filter
-              id={`noise-${startIndex}`}
-              x="0%"
-              y="0%"
-              width="100%"
-              height="100%"
-            >
-              <feTurbulence
-                baseFrequency="0.9"
-                numOctaves="4"
-                type="fractalNoise"
-                result="noise"
-              />
-              <feColorMatrix
-                in="noise"
-                type="saturate"
-                values="0"
-                result="desaturatedNoise"
-              />
-              <feComponentTransfer in="desaturatedNoise" result="opacityNoise">
-                <feFuncA type="discrete" tableValues="0 .1 0 .05 0 .02 0" />
-              </feComponentTransfer>
-              <feComposite
-                in="SourceGraphic"
-                in2="opacityNoise"
-                operator="over"
-              />
-            </filter>
-          </defs>
-          <rect
+        {/* SVG noise filter - skip for Safari to avoid rendering issues */}
+        {!isSafari && (
+          <svg
+            className="absolute inset-0 pointer-events-none z-10"
             width="100%"
             height="100%"
-            fill="transparent"
-            filter={`url(#noise-${startIndex})`}
-          />
-        </svg>
+          >
+            <defs>
+              <filter
+                id={`noise-${startIndex}`}
+                x="0%"
+                y="0%"
+                width="100%"
+                height="100%"
+              >
+                <feTurbulence
+                  baseFrequency="0.9"
+                  numOctaves="4"
+                  type="fractalNoise"
+                  result="noise"
+                />
+                <feColorMatrix
+                  in="noise"
+                  type="saturate"
+                  values="0"
+                  result="desaturatedNoise"
+                />
+                <feComponentTransfer in="desaturatedNoise" result="opacityNoise">
+                  <feFuncA type="discrete" tableValues="0 .1 0 .05 0 .02 0" />
+                </feComponentTransfer>
+                <feComposite
+                  in="SourceGraphic"
+                  in2="opacityNoise"
+                  operator="over"
+                />
+              </filter>
+            </defs>
+            <rect
+              width="100%"
+              height="100%"
+              fill="transparent"
+              filter={`url(#noise-${startIndex})`}
+            />
+          </svg>
+        )}
 
         <SprocketHoles frameCount={framesInStrip} />
 
