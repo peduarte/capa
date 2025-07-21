@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { ContactSheet } from './contact-sheet/components/ContactSheet';
 import { DownloadButton } from './contact-sheet/components/DownloadButton';
 import {
@@ -31,6 +31,7 @@ function ContactSheetPageContent() {
   const [showDemo, setShowDemo] = useState(true); // Start with demo shown
   const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Demo image list (complete list from prototype)
   const demoImageList = useMemo(
@@ -81,46 +82,76 @@ function ContactSheetPageContent() {
   const currentImages =
     uploadedImages.length > 0 ? uploadedImages : showDemo ? demoImageList : [];
 
-  // Global drag and drop handlers
-  const processFiles = useCallback(async (files: FileList | File[]) => {
-    if (files.length === 0) return;
-
-    if (files.length > 50) {
-      setErrors(['Too many files selected. Maximum is 50 images.']);
-      return;
-    }
-
-    setIsProcessing(true);
+  // Clear contact sheet back to demo
+  const clearContactSheet = useCallback(() => {
+    // Clean up existing object URLs
+    revokeObjectUrls(uploadedImages);
+    setUploadedImages([]);
+    setShowDemo(true);
     setErrors([]);
+    clearAllHighlights();
+  }, [uploadedImages, clearAllHighlights]);
 
-    try {
-      const results = await convertFilesToObjectUrls(files);
-      const validImages = getValidImages(results);
-      const fileErrors = getErrors(results);
-
-      if (validImages.length > 0) {
-        // Clean up previous object URLs before setting new ones
-        revokeObjectUrls(uploadedImages);
-        setUploadedImages(validImages);
-        setShowDemo(false);
-        // Clear highlights when new images are loaded
-        clearAllHighlights();
-      }
-
-      if (fileErrors.length > 0) {
-        setErrors(fileErrors);
-      }
-
-      if (validImages.length === 0 && fileErrors.length === 0) {
-        setErrors(['No valid images found.']);
-      }
-    } catch (error) {
-      setErrors(['An error occurred while processing your images.']);
-      console.error('File processing error:', error);
-    } finally {
-      setIsProcessing(false);
+  // Handle upload button click
+  const handleUploadClick = () => {
+    if (!isProcessing && !isDragOver) {
+      fileInputRef.current?.click();
     }
-  }, []);
+  };
+
+  // Handle file input change
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      processFiles(e.target.files);
+    }
+  };
+
+  // Global drag and drop handlers
+  const processFiles = useCallback(
+    async (files: FileList | File[]) => {
+      if (files.length === 0) return;
+
+      // Check total image count (existing + new)
+      const totalImages = uploadedImages.length + files.length;
+      if (totalImages > 50) {
+        setErrors([
+          `Too many images. Maximum is 50 total (you have ${uploadedImages.length}, trying to add ${files.length}).`,
+        ]);
+        return;
+      }
+
+      setIsProcessing(true);
+      setErrors([]);
+
+      try {
+        const results = await convertFilesToObjectUrls(files);
+        const validImages = getValidImages(results);
+        const fileErrors = getErrors(results);
+
+        if (validImages.length > 0) {
+          // Append new images to existing ones (don't replace)
+          setUploadedImages(prev => [...prev, ...validImages]);
+          setShowDemo(false);
+          // Clear highlights when new images are added
+          clearAllHighlights();
+        }
+
+        if (fileErrors.length > 0) {
+          setErrors(fileErrors);
+        }
+
+        if (validImages.length === 0 && fileErrors.length === 0) {
+          setErrors(['No valid images found.']);
+        }
+      } catch (error) {
+        setErrors(['An error occurred while processing your images.']);
+        console.error('File processing error:', error);
+      } finally {
+        setIsProcessing(false);
+      }
+    },
+    [uploadedImages.length, clearAllHighlights]
+  );
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -225,10 +256,32 @@ function ContactSheetPageContent() {
       {/* Sticky Top Navigation Bar */}
       <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-sm border-b border-gray-700/50">
         <div className="flex items-center justify-between px-6 py-4">
-          {/* Left: Guidance Text */}
-          <span className="text-sm text-gray-300">
-            Drag your images anywhere to create your own contact sheet
-          </span>
+          {/* Left: Upload Button and Guidance Text or Clear Button */}
+          <div className="flex items-center space-x-4">
+            {/* Upload Button */}
+            <button
+              onClick={handleUploadClick}
+              className="text-sm text-gray-300 hover:text-white px-3 py-1 rounded border border-gray-600 hover:border-gray-400 transition-colors"
+              disabled={isProcessing || isDragOver}
+            >
+              Upload images
+            </button>
+
+            {/* Guidance Text or Clear Button */}
+            {uploadedImages.length > 0 ? (
+              <button
+                onClick={clearContactSheet}
+                className="text-sm text-gray-300 hover:text-white px-3 py-1 rounded border border-gray-600 hover:border-gray-400 transition-colors"
+                disabled={isProcessing || isDragOver}
+              >
+                Clear
+              </button>
+            ) : (
+              <span className="text-sm text-gray-300">
+                or drag them anywhere to create your own contact sheet
+              </span>
+            )}
+          </div>
 
           {/* Right: Download Button - only enabled when user uploads images */}
           <DownloadButton
@@ -237,6 +290,17 @@ function ContactSheetPageContent() {
           />
         </div>
       </div>
+
+      {/* Hidden File Input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept="image/jpeg,image/jpg,image/png,image/webp"
+        onChange={handleFileInputChange}
+        className="hidden"
+        disabled={isProcessing || isDragOver}
+      />
 
       {/* Main Content */}
       <div className="p-8">
