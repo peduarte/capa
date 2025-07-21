@@ -15,7 +15,12 @@ interface NegativeStripProps {
 }
 
 export const NegativeStrip = React.memo(
-  ({ images, startIndex, onFrameClick, isSafari = false }: NegativeStripProps) => {
+  ({
+    images,
+    startIndex,
+    onFrameClick,
+    isSafari = false,
+  }: NegativeStripProps) => {
     // Calculate values first
     const framesInStrip = Math.min(6, images.length - startIndex);
     const stripIndex = Math.floor(startIndex / 6);
@@ -46,10 +51,12 @@ export const NegativeStrip = React.memo(
           transform: `rotate(${rotation}deg)`,
           transformOrigin: 'center center',
           // Remove complex box-shadow for Safari compatibility
-          ...(isSafari 
+          ...(isSafari
             ? { border: '1px solid rgba(255, 255, 255, 0.1)' }
-            : { boxShadow: '1px -1px 0px rgba(255, 255, 255, 0.09), -1px 1px 0px rgba(255, 255, 255, 0.05)' }
-          ),
+            : {
+                boxShadow:
+                  '1px -1px 0px rgba(255, 255, 255, 0.09), -1px 1px 0px rgba(255, 255, 255, 0.05)',
+              }),
           userSelect: 'none',
         }}
       >
@@ -80,7 +87,10 @@ export const NegativeStrip = React.memo(
                   values="0"
                   result="desaturatedNoise"
                 />
-                <feComponentTransfer in="desaturatedNoise" result="opacityNoise">
+                <feComponentTransfer
+                  in="desaturatedNoise"
+                  result="opacityNoise"
+                >
                   <feFuncA type="discrete" tableValues="0 .1 0 .05 0 .02 0" />
                 </feComponentTransfer>
                 <feComposite

@@ -2,8 +2,10 @@ import { toPng as htmlToPng, toJpeg as htmlToJpeg } from 'html-to-image';
 
 const isSafari = () => {
   if (typeof navigator === 'undefined') return false;
-  return navigator.userAgent.indexOf('Safari') > -1 && 
-         navigator.userAgent.indexOf('Chrome') <= -1;
+  return (
+    navigator.userAgent.indexOf('Safari') > -1 &&
+    navigator.userAgent.indexOf('Chrome') <= -1
+  );
 };
 
 const imageFilter = (node: HTMLElement) => {
@@ -89,7 +91,7 @@ export const toPng = async (node: HTMLElement, options?: PngOptions) => {
 
   try {
     const htmlToImageOptions = getHtmlToImageOptions();
-    
+
     // Ray-so's double rendering trick for reliability
     await htmlToPng(node, {
       ...htmlToImageOptions,
@@ -116,7 +118,7 @@ export const toJpeg = async (node: HTMLElement, options?: JpegOptions) => {
 
   try {
     const htmlToImageOptions = getHtmlToImageOptions();
-    
+
     // Ray-so's double rendering trick for reliability
     await htmlToJpeg(node, {
       ...htmlToImageOptions,
