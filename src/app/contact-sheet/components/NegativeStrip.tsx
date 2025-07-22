@@ -84,7 +84,7 @@ export const NegativeStrip = ({ images, startIndex }: NegativeStripProps) => {
 
   return (
     <div
-      className="relative mb-4 overflow-hidden flex flex-shrink-0 negative-strip-container"
+      className="relative mb-4 overflow-hidden flex flex-shrink-0 negative-strip-container user-select-none"
       style={{
         height: `${MEASUREMENTS.frameHeight}px`,
         width: `${stripWidth}px`,
