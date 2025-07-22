@@ -3,8 +3,5 @@
     "src/app/api/generate-contact-sheet/route.ts": {
       "maxDuration": 30
     }
-  },
-  "env": {
-    "PUPPETEER_EXECUTABLE_PATH": "/usr/bin/google-chrome"
   }
 }

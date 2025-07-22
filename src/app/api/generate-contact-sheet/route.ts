@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 import { MEASUREMENTS } from '../../contact-sheet/utils/constants';
 
 // Types for the request payload
@@ -44,22 +44,35 @@ export async function POST(request: NextRequest) {
     console.log('Base URL:', baseUrl);
     console.log('Starting Puppeteer browser...');
     // Launch Puppeteer browser
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    // Dynamic import based on environment
+    const puppeteer = isProduction 
+      ? (await import('puppeteer-core')).default
+      : (await import('puppeteer')).default;
+    
     const browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--disable-web-security', // Allow cross-origin images
-        '--allow-running-insecure-content',
-        '--single-process',
-        '--no-zygote',
-      ],
-      executablePath:
-        process.env.NODE_ENV === 'production'
-          ? process.env.PUPPETEER_EXECUTABLE_PATH
-          : puppeteer.executablePath(),
+      args: isProduction 
+        ? chromium.args
+        : [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--disable-web-security',
+            '--allow-running-insecure-content',
+          ],
+      defaultViewport: {
+        width: 1920,
+        height: 1080,
+        deviceScaleFactor: 1,
+        isMobile: false,
+        isLandscape: true
+      },
+      executablePath: isProduction 
+        ? await chromium.executablePath() 
+        : undefined,
+      headless: isProduction ? 'shell' : true,
     });
 
     console.log('Browser launched successfully');
@@ -84,7 +97,10 @@ export async function POST(request: NextRequest) {
 
     // Set the page content and wait for images to load
     console.log('Setting page content...');
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.setContent(html, { 
+      waitUntil: 'domcontentloaded',
+      timeout: 60000 
+    });
 
     console.log('Waiting for images to load...');
     // Wait for all images to be loaded
