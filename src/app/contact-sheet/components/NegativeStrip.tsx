@@ -1,251 +1,280 @@
-import React, { useMemo } from 'react';
-import { SprocketHoles } from './SprocketHoles';
+import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import {
   MEASUREMENTS,
-  STRIP_PADDING,
-  FRAME_GAP,
   getStripRotation,
+  HighlightType,
 } from '../utils/constants';
+
+interface FrameHighlight {
+  frameNumber: number;
+  type: HighlightType;
+}
 
 interface NegativeStripProps {
   images: string[];
   startIndex: number;
-  onFrameClick?: (frameNumber: number, event: React.MouseEvent) => void;
-  isSafari?: boolean;
 }
 
-export const NegativeStrip = React.memo(
-  ({
-    images,
-    startIndex,
-    onFrameClick,
-    isSafari = false,
-  }: NegativeStripProps) => {
-    // Calculate values first
-    const framesInStrip = Math.min(6, images.length - startIndex);
-    const stripIndex = Math.floor(startIndex / 6);
+export const NegativeStrip = ({ images, startIndex }: NegativeStripProps) => {
+  const [highlights, setHighlights] = useState<FrameHighlight[]>([]);
+  const [xMarks, setXMarks] = useState<number[]>([]);
+  const [keysPressed, setKeysPressed] = useState<Set<string>>(new Set());
 
-    // All useMemo calls
-    const textStartingOffset = useMemo(() => {
-      // Use startIndex as seed for consistent offset
-      const seed = startIndex * 456.789;
-      return Math.sin(seed) * 40; // Range of -40 to 40
-    }, [startIndex]);
+  const framesInStrip = Math.min(6, images.length - startIndex);
+  const stripIndex = Math.floor(startIndex / 6);
+  const rotation = getStripRotation(stripIndex);
+  const stripWidth = framesInStrip * MEASUREMENTS.frameWidth;
 
-    const stripWidth =
-      framesInStrip * MEASUREMENTS.frameWidth +
-      (framesInStrip - 1) * FRAME_GAP +
-      STRIP_PADDING * 2;
-    const frameTop =
-      (MEASUREMENTS.negativeHeight - MEASUREMENTS.frameHeight) / 2;
+  // Keyboard event handling
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      setKeysPressed(prev => new Set(prev).add(event.key.toLowerCase()));
+    };
 
-    // Use consistent rotation based on strip index
-    const rotation = getStripRotation(stripIndex);
+    const handleKeyUp = (event: KeyboardEvent) => {
+      setKeysPressed(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(event.key.toLowerCase());
+        return newSet;
+      });
+    };
 
-    return (
-      <div
-        className="relative bg-[#080808] mb-4 overflow-hidden"
-        style={{
-          height: MEASUREMENTS.negativeHeight,
-          width: stripWidth,
-          transform: `rotate(${rotation}deg)`,
-          transformOrigin: 'center center',
-          // Remove complex box-shadow for Safari compatibility
-          ...(isSafari
-            ? { border: '1px solid rgba(255, 255, 255, 0.1)' }
-            : {
-                boxShadow:
-                  '1px -1px 0px rgba(255, 255, 255, 0.09), -1px 1px 0px rgba(255, 255, 255, 0.05)',
-              }),
-          userSelect: 'none',
-        }}
-      >
-        {/* SVG noise filter - skip for Safari to avoid rendering issues */}
-        {!isSafari && (
-          <svg
-            className="absolute inset-0 pointer-events-none z-10"
-            width="100%"
-            height="100%"
-          >
-            <defs>
-              <filter
-                id={`noise-${startIndex}`}
-                x="0%"
-                y="0%"
-                width="100%"
-                height="100%"
-              >
-                <feTurbulence
-                  baseFrequency="0.9"
-                  numOctaves="4"
-                  type="fractalNoise"
-                  result="noise"
-                />
-                <feColorMatrix
-                  in="noise"
-                  type="saturate"
-                  values="0"
-                  result="desaturatedNoise"
-                />
-                <feComponentTransfer
-                  in="desaturatedNoise"
-                  result="opacityNoise"
-                >
-                  <feFuncA type="discrete" tableValues="0 .1 0 .05 0 .02 0" />
-                </feComponentTransfer>
-                <feComposite
-                  in="SourceGraphic"
-                  in2="opacityNoise"
-                  operator="over"
-                />
-              </filter>
-            </defs>
-            <rect
-              width="100%"
-              height="100%"
-              fill="transparent"
-              filter={`url(#noise-${startIndex})`}
-            />
-          </svg>
-        )}
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
 
-        <SprocketHoles frameCount={framesInStrip} />
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
 
-        {/* Film stock text repeating every 2 frames */}
-        {Array.from({ length: 7 }, (_, textIndex) => (
-          <span
-            key={textIndex}
+  const handleFrameClick = (frameNumber: number, event: React.MouseEvent) => {
+    if (keysPressed.has('x')) {
+      // Handle X marking
+      setXMarks(prev =>
+        prev.includes(frameNumber)
+          ? prev.filter(num => num !== frameNumber)
+          : [...prev, frameNumber]
+      );
+    } else {
+      // Handle highlights (default/scribble for option key/circle for cmd key)
+      const highlightType = event.metaKey
+        ? 'circle'
+        : event.altKey
+          ? 'scribble'
+          : 'default';
+      setHighlights(prev => {
+        const existing = prev.find(h => h.frameNumber === frameNumber);
+        if (existing) {
+          // Remove existing highlight
+          return prev.filter(h => h.frameNumber !== frameNumber);
+        } else {
+          // Add new highlight
+          return [...prev, { frameNumber, type: highlightType }];
+        }
+      });
+    }
+  };
+
+  // Calculate positions for highlights in this strip
+  const getFramePosition = (frameIndex: number) => ({
+    left: frameIndex * MEASUREMENTS.frameWidth,
+    top: 0,
+    width: MEASUREMENTS.frameWidth,
+    height: MEASUREMENTS.frameHeight,
+  });
+
+  return (
+    <div
+      className="relative mb-4 overflow-hidden flex flex-shrink-0 negative-strip-container"
+      style={{
+        height: `${MEASUREMENTS.frameHeight}px`,
+        width: `${stripWidth}px`,
+        transform: `rotate(${rotation}deg)`,
+        transformOrigin: 'center center',
+        userSelect: 'none',
+      }}
+    >
+      {Array.from({ length: framesInStrip }, (_, index) => {
+        const imageIndex = startIndex + index;
+        const imagePath = images[imageIndex];
+        const frameNumber = imageIndex + 1;
+
+        return (
+          <div
+            key={index}
+            className="relative cursor-pointer flex items-center justify-center"
             style={{
-              position: 'absolute',
-              top: 2,
-              left:
-                STRIP_PADDING +
-                textIndex * (MEASUREMENTS.frameWidth + FRAME_GAP) -
-                40 +
-                textStartingOffset, // Use same offset for all instances
-              fontSize: '9px',
-              lineHeight: '1',
-              color: 'rgba(255, 255, 255, 0.9)',
-              fontWeight: 'bold',
-              letterSpacing: '0.05em',
-              fontFamily: 'monospace',
-              textShadow: '0 0 1px rgba(0, 0, 0, 0.5)',
-              textWrap: 'nowrap',
-              userSelect: 'none',
+              width: `${MEASUREMENTS.frameWidth}px`,
+              height: `${MEASUREMENTS.frameHeight}px`,
+              backgroundImage: 'url(/frame.png)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
             }}
+            onClick={event => handleFrameClick(frameNumber, event)}
           >
-            ILFORD HP5 PLUS
-          </span>
-        ))}
+            {imagePath && (
+              <div
+                className="relative"
+                style={{
+                  width: `${MEASUREMENTS.imageWidth}px`,
+                  height: `${MEASUREMENTS.imageHeight}px`,
+                }}
+                onClick={event => {
+                  event.stopPropagation();
+                  handleFrameClick(frameNumber, event);
+                }}
+              >
+                <Image
+                  src={
+                    imagePath.startsWith('blob:')
+                      ? imagePath
+                      : `/hp5/${imagePath}`
+                  }
+                  alt={`Frame ${imageIndex + 1}`}
+                  width={MEASUREMENTS.imageWidth}
+                  height={MEASUREMENTS.imageHeight}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  crossOrigin="anonymous"
+                  unoptimized={imagePath.startsWith('blob:')}
+                />
+              </div>
+            )}
 
-        {/* Frame index numbers between gaps */}
-        {Array.from({ length: framesInStrip }, (_, index) => {
-          const frameLeft =
-            STRIP_PADDING + index * (MEASUREMENTS.frameWidth + FRAME_GAP);
-          const frameNumber = startIndex + index + 1; // 1-indexed frame numbers
-
-          return (
-            <span
-              key={`frame-${index}`}
+            {/* Ilford title overlay */}
+            <div
+              className="absolute pointer-events-none"
               style={{
-                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '188px',
+                height: '11px',
+                backgroundImage: 'url(/ilford-title.png)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                zIndex: 10,
+              }}
+            />
+
+            {/* Ilford footer overlay */}
+            <div
+              className="absolute pointer-events-none"
+              style={{
                 bottom: 0,
-                left: frameLeft + MEASUREMENTS.frameWidth + FRAME_GAP / 2 - 6, // Center in gap
-                fontSize: '11px',
+                left: 0,
+                width: '188px',
+                height: '11px',
+                backgroundImage: 'url(/ilford-footer.png)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                zIndex: 10,
+              }}
+            />
+
+            {/* Frame index number */}
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                bottom: '0px',
+                left: '74px',
+                fontSize: '10px',
                 lineHeight: '1',
-                color: 'rgba(255, 255, 255, 0.9)',
+                fontFamily: 'Courier, monospace',
+                color: 'white',
+                zIndex: 15,
+                textAlign: 'center',
+                width: '24px',
                 fontWeight: 'bold',
-                letterSpacing: '0.05em',
-                fontFamily: 'monospace',
-                textShadow: '0 0 1px rgba(0, 0, 0, 0.5)',
-                userSelect: 'none',
+                opacity: '0.9',
+              }}
+            >
+              ▸{frameNumber}
+              <span style={{ fontSize: '8px' }}>A</span>
+            </div>
+
+            {/* Frame index number */}
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                right: '0px',
+                bottom: '0px',
+                fontSize: '13px',
+                lineHeight: '1',
+                fontFamily: 'Courier, monospace',
+                color: 'white',
+                zIndex: 15,
+                textAlign: 'right',
+                fontWeight: 'bold',
+                opacity: '0.9',
               }}
             >
               {frameNumber}
-            </span>
-          );
-        })}
-
-        {/* Frame index under center of each frame */}
-        {Array.from({ length: framesInStrip }, (_, index) => {
-          const frameLeft =
-            STRIP_PADDING + index * (MEASUREMENTS.frameWidth + FRAME_GAP);
-          const frameNumber = startIndex + index + 1; // 1-indexed frame numbers
-
-          return (
-            <span
-              key={`center-frame-${index}`}
-              style={{
-                position: 'absolute',
-                bottom: 0,
-                left: frameLeft + MEASUREMENTS.frameWidth / 2 - 8, // Center under frame
-                fontSize: '9px',
-                lineHeight: '1',
-                color: 'rgba(255, 255, 255, 0.8)',
-                fontWeight: 'bold',
-                letterSpacing: '0.05em',
-                fontFamily: 'monospace',
-                textShadow: '0 0 1px rgba(0, 0, 0, 0.5)',
-                userSelect: 'none',
-              }}
-            >
-              ▸ {frameNumber}A
-            </span>
-          );
-        })}
-
-        {Array.from({ length: framesInStrip }, (_, index) => {
-          const imageIndex = startIndex + index;
-          const imagePath = images[imageIndex];
-          const frameLeft =
-            STRIP_PADDING + index * (MEASUREMENTS.frameWidth + FRAME_GAP);
-
-          const frameNumber = imageIndex + 1;
-
-          return (
-            <div key={index} className="relative">
-              <div
-                className="absolute overflow-hidden cursor-pointer"
-                style={{
-                  left: frameLeft,
-                  top: frameTop,
-                  width: MEASUREMENTS.frameWidth,
-                  height: MEASUREMENTS.frameHeight,
-                }}
-                onClick={
-                  onFrameClick
-                    ? event => onFrameClick(frameNumber, event)
-                    : undefined
-                }
-              >
-                {imagePath && (
-                  <img
-                    src={
-                      imagePath.startsWith('blob:') ||
-                      imagePath.startsWith('data:') ||
-                      imagePath.startsWith('http')
-                        ? imagePath
-                        : `/hp5/${imagePath}`
-                    }
-                    alt={`Frame ${imageIndex + 1}`}
-                    className="object-cover"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                    }}
-                    crossOrigin="anonymous"
-                  />
-                )}
-              </div>
             </div>
-          );
-        })}
-      </div>
-    );
-  }
-);
+          </div>
+        );
+      })}
+
+      {/* Simple highlight overlays using background images */}
+      {highlights.map(({ frameNumber, type }) => {
+        const frameIndex = frameNumber - startIndex - 1;
+        if (frameIndex < 0 || frameIndex >= framesInStrip) return null;
+        const position = getFramePosition(frameIndex);
+
+        const getHighlightImage = () => {
+          if (type === 'scribble') return '/frame-highlight-scribble.png';
+          if (type === 'circle') return '/frame-highlight-circle.png';
+          return '/frame-highlight-select.png';
+        };
+
+        return (
+          <div
+            key={`highlight-${frameNumber}`}
+            className="absolute pointer-events-none"
+            style={{
+              left: position.left,
+              top: position.top,
+              width: position.width,
+              height: position.height,
+              backgroundImage: `url(${getHighlightImage()})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              zIndex: 20,
+            }}
+          />
+        );
+      })}
+
+      {/* X mark overlays */}
+      {xMarks.map(frameNumber => {
+        const frameIndex = frameNumber - startIndex - 1;
+        if (frameIndex < 0 || frameIndex >= framesInStrip) return null;
+        const position = getFramePosition(frameIndex);
+
+        return (
+          <div
+            key={`x-mark-${frameNumber}`}
+            className="absolute pointer-events-none"
+            style={{
+              left: position.left,
+              top: position.top,
+              width: position.width,
+              height: position.height,
+              backgroundImage: 'url(/frame-highlight-x.png)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              zIndex: 20,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+};
 
 NegativeStrip.displayName = 'NegativeStrip';
