@@ -114,7 +114,7 @@ export const revokeObjectUrls = (urls: string[]) => {
   });
 };
 
-// Image compression function
+// Image compression function with portrait rotation
 export const compressImage = (
   file: File,
   maxWidth: number = COMPRESSION_MAX_WIDTH,
@@ -132,14 +132,21 @@ export const compressImage = (
     }
 
     img.onload = () => {
-      // Calculate new dimensions maintaining aspect ratio
       let { width, height } = img;
+
+      // Check if image is portrait and rotate it to landscape
+      const isPortrait = height > width;
+      if (isPortrait) {
+        // Swap dimensions for portrait images to make them landscape
+        [width, height] = [height, width];
+      }
+
       const aspectRatio = width / height;
 
       // Resize if image is larger than max dimensions
       if (width > maxWidth || height > maxHeight) {
         if (aspectRatio > 1) {
-          // Landscape
+          // Landscape (or rotated portrait)
           width = maxWidth;
           height = width / aspectRatio;
           if (height > maxHeight) {
@@ -147,7 +154,7 @@ export const compressImage = (
             width = height * aspectRatio;
           }
         } else {
-          // Portrait or square
+          // Square
           height = maxHeight;
           width = height * aspectRatio;
           if (width > maxWidth) {
@@ -161,8 +168,15 @@ export const compressImage = (
       canvas.width = width;
       canvas.height = height;
 
-      // Draw and compress
-      ctx.drawImage(img, 0, 0, width, height);
+      if (isPortrait) {
+        // For portrait images, rotate 90 degrees clockwise
+        ctx.translate(width / 2, height / 2);
+        ctx.rotate(Math.PI / 2);
+        ctx.drawImage(img, -height / 2, -width / 2, height, width);
+      } else {
+        // For landscape images, draw normally
+        ctx.drawImage(img, 0, 0, width, height);
+      }
 
       // Convert to blob with compression
       canvas.toBlob(
