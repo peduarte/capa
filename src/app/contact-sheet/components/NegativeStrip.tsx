@@ -176,7 +176,7 @@ export const NegativeStrip = ({
             <div
               className="absolute pointer-events-none"
               style={{
-                bottom: 0,
+                bottom: '2px',
                 left: 0,
                 width: '188px',
                 height: '11px',
@@ -185,6 +185,7 @@ export const NegativeStrip = ({
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
                 zIndex: 10,
+                mixBlendMode: 'color-dodge',
               }}
             />
 
@@ -238,6 +239,7 @@ export const NegativeStrip = ({
                   backgroundPosition: 'center',
                   backgroundRepeat: 'no-repeat',
                   zIndex: 20,
+                  opacity: highlight.type === 'scribble' ? 1 : 0.9,
                 }}
               />
             )}
@@ -252,6 +254,7 @@ export const NegativeStrip = ({
                   backgroundPosition: 'center',
                   backgroundRepeat: 'no-repeat',
                   zIndex: 20,
+                  opacity: '0.9',
                 }}
               />
             )}
