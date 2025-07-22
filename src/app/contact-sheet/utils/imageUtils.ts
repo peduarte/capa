@@ -202,11 +202,14 @@ export const convertFileToCompressedObjectUrl = (
       // Check original image dimensions first
       const originalUrl = URL.createObjectURL(file);
       const img = new Image();
-      
+
       img.onload = async () => {
         URL.revokeObjectURL(originalUrl); // Clean up original URL
 
-        if (img.width > MAX_IMAGE_DIMENSION || img.height > MAX_IMAGE_DIMENSION) {
+        if (
+          img.width > MAX_IMAGE_DIMENSION ||
+          img.height > MAX_IMAGE_DIMENSION
+        ) {
           resolve({
             valid: false,
             error: `Image too large: ${img.width}x${img.height}. Maximum dimension is ${MAX_IMAGE_DIMENSION}px.`,
@@ -245,7 +248,7 @@ export const convertFileToCompressedObjectUrl = (
       };
 
       img.src = originalUrl;
-    } catch (error) {
+    } catch {
       resolve({
         valid: false,
         error: 'Failed to process image file.',
@@ -259,6 +262,8 @@ export const convertFilesToCompressedObjectUrls = async (
   files: FileList | File[]
 ): Promise<ImageValidationResult[]> => {
   const fileArray = Array.from(files);
-  const results = await Promise.all(fileArray.map(convertFileToCompressedObjectUrl));
+  const results = await Promise.all(
+    fileArray.map(convertFileToCompressedObjectUrl)
+  );
   return results;
 };
