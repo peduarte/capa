@@ -86,14 +86,6 @@ export const NegativeStrip = ({
     }
   };
 
-  // Calculate positions for highlights in this strip
-  const getFramePosition = (frameIndex: number) => ({
-    left: frameIndex * MEASUREMENTS.frameWidth,
-    top: 0,
-    width: MEASUREMENTS.frameWidth,
-    height: MEASUREMENTS.frameHeight,
-  });
-
   return (
     <div
       className="relative mb-4 overflow-hidden flex flex-shrink-0 negative-strip-container user-select-none"
@@ -109,6 +101,16 @@ export const NegativeStrip = ({
         const imageIndex = startIndex + index;
         const imagePath = images[imageIndex];
         const frameNumber = imageIndex + 1;
+
+        // Check if this frame has a highlight
+        const highlight = highlights.find(h => h.frameNumber === frameNumber);
+        const hasXMark = xMarks.includes(frameNumber);
+
+        const getHighlightImage = (type: string) => {
+          if (type === 'scribble') return '/frame-highlight-scribble.png';
+          if (type === 'circle') return '/frame-highlight-circle.png';
+          return '/frame-highlight-select.png';
+        };
 
         return (
           <div
@@ -223,63 +225,35 @@ export const NegativeStrip = ({
             >
               {frameNumber}
             </div>
+
+            {/* Conditional highlight overlay */}
+            {highlight && (
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  backgroundImage: `url(${getHighlightImage(highlight.type)})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat',
+                  zIndex: 20,
+                }}
+              />
+            )}
+
+            {/* Conditional X mark overlay */}
+            {hasXMark && (
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  backgroundImage: 'url(/frame-highlight-x.png)',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat',
+                  zIndex: 20,
+                }}
+              />
+            )}
           </div>
-        );
-      })}
-
-      {/* Simple highlight overlays using background images */}
-      {highlights.map(({ frameNumber, type }) => {
-        const frameIndex = frameNumber - startIndex - 1;
-        if (frameIndex < 0 || frameIndex >= framesInStrip) return null;
-        const position = getFramePosition(frameIndex);
-
-        const getHighlightImage = () => {
-          if (type === 'scribble') return '/frame-highlight-scribble.png';
-          if (type === 'circle') return '/frame-highlight-circle.png';
-          return '/frame-highlight-select.png';
-        };
-
-        return (
-          <div
-            key={`highlight-${frameNumber}`}
-            className="absolute pointer-events-none"
-            style={{
-              left: position.left,
-              top: position.top,
-              width: position.width,
-              height: position.height,
-              backgroundImage: `url(${getHighlightImage()})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat',
-              zIndex: 20,
-            }}
-          />
-        );
-      })}
-
-      {/* X mark overlays */}
-      {xMarks.map(frameNumber => {
-        const frameIndex = frameNumber - startIndex - 1;
-        if (frameIndex < 0 || frameIndex >= framesInStrip) return null;
-        const position = getFramePosition(frameIndex);
-
-        return (
-          <div
-            key={`x-mark-${frameNumber}`}
-            className="absolute pointer-events-none"
-            style={{
-              left: position.left,
-              top: position.top,
-              width: position.width,
-              height: position.height,
-              backgroundImage: 'url(/frame-highlight-x.png)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat',
-              zIndex: 20,
-            }}
-          />
         );
       })}
     </div>
