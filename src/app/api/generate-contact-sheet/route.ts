@@ -45,14 +45,14 @@ export async function POST(request: NextRequest) {
     console.log('Starting Puppeteer browser...');
     // Launch Puppeteer browser
     const isProduction = process.env.NODE_ENV === 'production';
-    
+
     // Dynamic import based on environment
-    const puppeteer = isProduction 
+    const puppeteer = isProduction
       ? (await import('puppeteer-core')).default
       : (await import('puppeteer')).default;
-    
+
     const browser = await puppeteer.launch({
-      args: isProduction 
+      args: isProduction
         ? chromium.args
         : [
             '--no-sandbox',
@@ -67,10 +67,10 @@ export async function POST(request: NextRequest) {
         height: 1080,
         deviceScaleFactor: 1,
         isMobile: false,
-        isLandscape: true
+        isLandscape: true,
       },
-      executablePath: isProduction 
-        ? await chromium.executablePath() 
+      executablePath: isProduction
+        ? await chromium.executablePath()
         : undefined,
       headless: isProduction ? 'shell' : true,
     });
@@ -97,24 +97,15 @@ export async function POST(request: NextRequest) {
 
     // Set the page content and wait for images to load
     console.log('Setting page content...');
-    await page.setContent(html, { 
+    await page.setContent(html, {
       waitUntil: 'domcontentloaded',
-      timeout: 60000 
+      timeout: 60000,
     });
 
     console.log('Waiting for images to load...');
     // Wait for all images to be loaded
-    await page.evaluate(() => {
-      return Promise.all(
-        Array.from(document.images).map(img => {
-          if (img.complete) return Promise.resolve();
-          return new Promise(resolve => {
-            img.addEventListener('load', () => resolve(undefined));
-            img.addEventListener('error', () => resolve(undefined));
-          });
-        })
-      );
-    });
+    await page.waitForSelector('img', { timeout: 30000 });
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Get the dimensions of the contact sheet
     const dimensions = getContactSheetDimensions(images.length);
