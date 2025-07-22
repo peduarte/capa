@@ -396,7 +396,7 @@ async function generateContactSheetHTML(
 function getHighlightImage(type: 'default' | 'scribble' | 'circle'): string {
   if (type === 'scribble') return '/frame-highlight-scribble.png';
   if (type === 'circle') return '/frame-highlight-circle.png';
-  return '/frame-highlight-select.png';
+  return '/frame-highlight-rectangle.png';
 }
 
 function getContactSheetDimensions(imageCount: number) {
