@@ -17,6 +17,7 @@ export const ContactSheet = ({ images, ref }: ContactSheetProps) => {
         width: MEASUREMENTS.frameWidth * 6,
         height: MEASUREMENTS.frameHeight * numberOfStrips + numberOfStrips * 16,
         minWidth: '0',
+        transform: 'scale(1)',
       }}
     >
       {Array.from({ length: numberOfStrips }, (_, i) => (
