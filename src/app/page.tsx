@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import * as Select from '@radix-ui/react-select';
 import { ContactSheet } from './contact-sheet/components/ContactSheet';
 import { DownloadButton } from './contact-sheet/components/DownloadButton';
 import { HighlightTypeSelector } from './contact-sheet/components/HighlightTypeSelector';
@@ -48,6 +49,11 @@ function ContactSheetPageContent() {
         document.activeElement?.tagName === 'TEXTAREA' ||
         document.activeElement?.tagName === 'SELECT'
       ) {
+        return;
+      }
+
+      // Don't handle shortcuts if any modifier keys are pressed
+      if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) {
         return;
       }
 
@@ -277,7 +283,9 @@ function ContactSheetPageContent() {
                 Clear
               </button>
             ) : (
-              <span className="text-sm text-white italic">or drag them</span>
+              <span className="text-sm text-white italic hidden md:block">
+                or drag them
+              </span>
             )}
           </div>
 
@@ -291,20 +299,47 @@ function ContactSheetPageContent() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 z-40 bg-black/80 backdrop-blur-sm flex gap-4 left-1/2 -translate-x-1/2 p-4 rounded-tl-lg rounded-tr-lg border-1 border-white/20">
+      <div className="fixed bottom-0 z-40 bg-black/80 backdrop-blur-sm flex gap-2 md:gap-4 left-1/2 -translate-x-1/2 p-2 md:p-4 rounded-tl-lg rounded-tr-lg border-1 border-white/20">
         <div className="flex items-center space-x-2">
-          <select
-            id="film-stock"
+          <Select.Root
             value={selectedFilmStock}
-            onChange={e => setSelectedFilmStock(e.target.value as FilmStock)}
-            className="text-sm bg-black border border-gray-600 text-gray-300 px-3 py-1 rounded hover:border-gray-400 focus:border-white focus:outline-none transition-colors"
+            onValueChange={value => setSelectedFilmStock(value as FilmStock)}
           >
-            {Object.values(FILM_STOCKS).map(stock => (
-              <option key={stock.id} value={stock.id}>
-                {stock.name}
-              </option>
-            ))}
-          </select>
+            <Select.Trigger className="px-2 py-1 text-xs text-white rounded focus:outline-none flex items-center justify-between text-nowrap">
+              <Select.Value />
+              <Select.Icon className="ml-1">
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 15 15"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M3.13523 6.15803C3.3241 5.95657 3.64052 5.94637 3.84197 6.13523L7.5 9.56464L11.158 6.13523C11.3595 5.94637 11.6759 5.95657 11.8648 6.15803C12.0536 6.35949 12.0434 6.67591 11.842 6.86477L7.84197 10.6148C7.64964 10.7951 7.35036 10.7951 7.15803 10.6148L3.15803 6.86477C2.95657 6.67591 2.94637 6.35949 3.13523 6.15803Z"
+                    fill="currentColor"
+                    fillRule="evenodd"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </Select.Icon>
+            </Select.Trigger>
+            <Select.Portal>
+              <Select.Content className="bg-black border border-gray-600 rounded shadow-lg z-50">
+                <Select.Viewport className="p-1">
+                  {Object.values(FILM_STOCKS).map(stock => (
+                    <Select.Item
+                      key={stock.id}
+                      value={stock.id}
+                      className="text-sm text-white px-3 py-1 rounded cursor-pointer hover:bg-white/20 focus:bg-white focus:text-black focus:outline-none"
+                    >
+                      <Select.ItemText>{stock.name}</Select.ItemText>
+                    </Select.Item>
+                  ))}
+                </Select.Viewport>
+              </Select.Content>
+            </Select.Portal>
+          </Select.Root>
         </div>
 
         {/* Center-Right: Highlight Type Selector */}

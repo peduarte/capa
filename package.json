@@ -13,6 +13,7 @@
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-dialog": "^1.1.14",
+    "@radix-ui/react-select": "^2.2.5",
     "@radix-ui/react-toggle-group": "^1.1.10",
     "@radix-ui/react-visually-hidden": "^1.2.3",
     "@sparticuz/chromium": "^138.0.1",
