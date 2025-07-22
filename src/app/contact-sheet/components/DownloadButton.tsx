@@ -115,13 +115,9 @@ export const DownloadButton = ({
       <button
         onClick={handleDownload}
         disabled={isDownloading}
-        className={`
-          px-4 py-2 text-sm rounded-lg transition-colors
-          bg-white text-black
-          ${className}
-        `}
+        className="text-sm bg-white text-black hover:text-black px-3 py-1 rounded border disabled:opacity-30"
       >
-        {isDownloading ? 'Downloading...' : 'Download'}
+        {isDownloading ? 'Downloading...' : 'Download contact sheet'}
       </button>
 
       {/* Error tooltip */}

@@ -14,6 +14,7 @@ interface ContactSheetProps {
   onHighlightsChange: (highlights: FrameHighlight[]) => void;
   onXMarksChange: (xMarks: number[]) => void;
   filmStock: FilmStock;
+  selectedHighlightType: string;
   ref: React.RefObject<HTMLDivElement | null>;
 }
 
@@ -24,6 +25,7 @@ export const ContactSheet = ({
   onHighlightsChange,
   onXMarksChange,
   filmStock,
+  selectedHighlightType,
   ref,
 }: ContactSheetProps) => {
   const numberOfStrips = Math.ceil(images.length / 6);
@@ -54,6 +56,7 @@ export const ContactSheet = ({
           onHighlightsChange={onHighlightsChange}
           onXMarksChange={onXMarksChange}
           filmStock={filmStock}
+          selectedHighlightType={selectedHighlightType}
         />
       ))}
     </div>

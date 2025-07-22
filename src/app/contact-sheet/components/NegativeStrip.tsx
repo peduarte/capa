@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import { MEASUREMENTS, FilmStock, FILM_STOCKS } from '../utils/constants';
 
@@ -15,6 +15,7 @@ interface NegativeStripProps {
   onHighlightsChange: (highlights: FrameHighlight[]) => void;
   onXMarksChange: (xMarks: number[]) => void;
   filmStock: FilmStock;
+  selectedHighlightType: string;
 }
 
 export const NegativeStrip = ({
@@ -25,40 +26,21 @@ export const NegativeStrip = ({
   onHighlightsChange,
   onXMarksChange,
   filmStock,
+  selectedHighlightType,
 }: NegativeStripProps) => {
-  const [keysPressed, setKeysPressed] = useState<Set<string>>(new Set());
-
   const framesInStrip = Math.min(6, images.length - startIndex);
   const stripIndex = Math.floor(startIndex / 6);
   const seed = stripIndex * 123.456;
   const rotation = Math.sin(seed) * 0.25;
   const stripWidth = framesInStrip * MEASUREMENTS.frameWidth;
 
-  // Keyboard event handling
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      setKeysPressed(prev => new Set(prev).add(event.key.toLowerCase()));
-    };
-
-    const handleKeyUp = (event: KeyboardEvent) => {
-      setKeysPressed(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(event.key.toLowerCase());
-        return newSet;
-      });
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, []);
-
   const handleFrameClick = (frameNumber: number, event: React.MouseEvent) => {
-    if (keysPressed.has('x')) {
+    // Do nothing if no highlight type is selected
+    if (!selectedHighlightType) {
+      return;
+    }
+
+    if (selectedHighlightType === 'x') {
       // Handle X marking
       onXMarksChange(
         xMarks.includes(frameNumber)
@@ -66,24 +48,38 @@ export const NegativeStrip = ({
           : [...xMarks, frameNumber]
       );
     } else {
-      // Handle highlights (default/scribble for option key/circle for cmd key)
-      const highlightType = event.metaKey
-        ? 'circle'
-        : event.altKey
-          ? 'scribble'
-          : 'default';
-      const existing = highlights.find(h => h.frameNumber === frameNumber);
-      if (existing) {
-        // Remove existing highlight
+      // Handle highlights using selected type - toggle individual highlight types
+      let highlightType: 'default' | 'scribble' | 'circle' = 'default';
+      if (selectedHighlightType === 'scribble') {
+        highlightType = 'scribble';
+      } else if (selectedHighlightType === 'circle') {
+        highlightType = 'circle';
+      } else if (selectedHighlightType === 'rectangle') {
+        highlightType = 'default';
+      }
+
+      // Check if this specific highlight type already exists for this frame
+      const existingHighlight = highlights.find(
+        h => h.frameNumber === frameNumber && h.type === highlightType
+      );
+
+      if (existingHighlight) {
+        // Remove only this specific highlight type
         onHighlightsChange(
-          highlights.filter(h => h.frameNumber !== frameNumber)
+          highlights.filter(
+            h => !(h.frameNumber === frameNumber && h.type === highlightType)
+          )
         );
       } else {
-        // Add new highlight
-        onHighlightsChange([
-          ...highlights,
-          { frameNumber, type: highlightType },
-        ]);
+        // Add new highlight of this type if a valid type is selected
+        if (
+          ['scribble', 'circle', 'rectangle'].includes(selectedHighlightType)
+        ) {
+          onHighlightsChange([
+            ...highlights,
+            { frameNumber, type: highlightType },
+          ]);
+        }
       }
     }
   };
@@ -104,14 +100,16 @@ export const NegativeStrip = ({
         const imagePath = images[imageIndex];
         const frameNumber = imageIndex + 1;
 
-        // Check if this frame has a highlight
-        const highlight = highlights.find(h => h.frameNumber === frameNumber);
+        // Get all highlights for this frame
+        const frameHighlights = highlights.filter(
+          h => h.frameNumber === frameNumber
+        );
         const hasXMark = xMarks.includes(frameNumber);
 
         const getHighlightImage = (type: string) => {
           if (type === 'scribble') return '/frame-highlight-scribble.png';
           if (type === 'circle') return '/frame-highlight-circle.png';
-          return '/frame-highlight-select.png';
+          return '/frame-highlight-rectangle.png';
         };
 
         return (
@@ -229,20 +227,21 @@ export const NegativeStrip = ({
               {frameNumber}
             </div>
 
-            {/* Conditional highlight overlay */}
-            {highlight && (
+            {/* Multiple highlight overlays */}
+            {frameHighlights.map((highlight, highlightIndex) => (
               <div
+                key={`${frameNumber}-${highlight.type}-${highlightIndex}`}
                 className="absolute inset-0 pointer-events-none"
                 style={{
                   backgroundImage: `url(${getHighlightImage(highlight.type)})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   backgroundRepeat: 'no-repeat',
-                  zIndex: 20,
+                  zIndex: 20 + highlightIndex,
                   opacity: highlight.type === 'scribble' ? 1 : 0.9,
                 }}
               />
-            )}
+            ))}
 
             {/* Conditional X mark overlay */}
             {hasXMark && (

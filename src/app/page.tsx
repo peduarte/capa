@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { ContactSheet } from './contact-sheet/components/ContactSheet';
 import { DownloadButton } from './contact-sheet/components/DownloadButton';
+import { HighlightTypeSelector } from './contact-sheet/components/HighlightTypeSelector';
 import {
   convertFilesToCompressedObjectUrls,
   getValidImages,
@@ -33,8 +34,50 @@ function ContactSheetPageContent() {
   const [xMarks, setXMarks] = useState<number[]>([]);
   const [selectedFilmStock, setSelectedFilmStock] =
     useState<FilmStock>(DEFAULT_FILM_STOCK);
+  const [selectedHighlightType, setSelectedHighlightType] =
+    useState<string>('rectangle');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadedImagesRef = useRef<string[]>([]); // Track images for cleanup
+
+  // Keyboard shortcuts for highlight type selection
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Only handle shortcuts if no input is focused
+      if (
+        document.activeElement?.tagName === 'INPUT' ||
+        document.activeElement?.tagName === 'TEXTAREA' ||
+        document.activeElement?.tagName === 'SELECT'
+      ) {
+        return;
+      }
+
+      const key = event.key.toLowerCase();
+      switch (key) {
+        case 'c':
+          setSelectedHighlightType('circle');
+          break;
+        case 's':
+          setSelectedHighlightType('scribble');
+          break;
+        case 'x':
+          setSelectedHighlightType('x');
+          break;
+        case 'r':
+          setSelectedHighlightType('rectangle');
+          break;
+        default:
+          return;
+      }
+
+      event.preventDefault();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   // Demo image list (complete list from prototype)
   const demoImageList = useMemo(
@@ -211,47 +254,31 @@ function ContactSheetPageContent() {
   return (
     <div className="min-h-screen relative">
       {/* Sticky Top Navigation Bar*/}
-      <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-sm border-b border-gray-700/50 h-[60px] flex items-center justify-center">
+      <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-sm border-b border-white/20 h-[60px] flex items-center justify-center">
         <div className="flex items-center justify-between px-6 py-4 w-full">
           {/* Left: Upload Button and Guidance Text or Clear Button */}
           <div className="flex items-center space-x-4">
             {/* Upload Button */}
             <button
               onClick={handleUploadClick}
-              className="text-sm text-gray-300 hover:text-white px-3 py-1 rounded border border-gray-600 hover:border-gray-400 transition-colors"
+              className="text-sm text-white hover:text-white px-3 py-1 rounded border border-white"
               disabled={isProcessing || isDragOver}
             >
-              Upload images
+              Choose images
             </button>
 
             {/* Guidance Text or Clear Button */}
             {uploadedImages.length > 0 ? (
               <button
                 onClick={clearContactSheet}
-                className="text-sm text-gray-300 hover:text-white px-3 py-1 rounded border border-gray-600 hover:border-gray-400 transition-colors"
+                className="text-sm text-white hover:text-white px-3 py-1 rounded border border-white"
                 disabled={isProcessing || isDragOver}
               >
                 Clear
               </button>
             ) : (
-              <span className="text-sm text-gray-300">or drag them</span>
+              <span className="text-sm text-white italic">or drag them</span>
             )}
-          </div>
-
-          {/* Center: Film Stock Selector */}
-          <div className="flex items-center space-x-2">
-            <select
-              id="film-stock"
-              value={selectedFilmStock}
-              onChange={e => setSelectedFilmStock(e.target.value as FilmStock)}
-              className="text-sm bg-black border border-gray-600 text-gray-300 px-3 py-1 rounded hover:border-gray-400 focus:border-white focus:outline-none transition-colors"
-            >
-              {Object.values(FILM_STOCKS).map(stock => (
-                <option key={stock.id} value={stock.id}>
-                  {stock.name}
-                </option>
-              ))}
-            </select>
           </div>
 
           {/* Right: Download Button - only enabled when user uploads images */}
@@ -262,6 +289,29 @@ function ContactSheetPageContent() {
             filmStock={selectedFilmStock}
           />
         </div>
+      </div>
+
+      <div className="fixed bottom-0 z-40 bg-black/80 backdrop-blur-sm flex gap-4 left-1/2 -translate-x-1/2 p-4 rounded-tl-lg rounded-tr-lg border-1 border-white/20">
+        <div className="flex items-center space-x-2">
+          <select
+            id="film-stock"
+            value={selectedFilmStock}
+            onChange={e => setSelectedFilmStock(e.target.value as FilmStock)}
+            className="text-sm bg-black border border-gray-600 text-gray-300 px-3 py-1 rounded hover:border-gray-400 focus:border-white focus:outline-none transition-colors"
+          >
+            {Object.values(FILM_STOCKS).map(stock => (
+              <option key={stock.id} value={stock.id}>
+                {stock.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Center-Right: Highlight Type Selector */}
+        <HighlightTypeSelector
+          selectedType={selectedHighlightType}
+          onTypeChange={setSelectedHighlightType}
+        />
       </div>
 
       {/* Hidden File Input */}
@@ -313,7 +363,7 @@ function ContactSheetPageContent() {
       {/* Contact Sheet - Scrollable at natural size */}
       <div
         ref={containerRef}
-        className="w-full bg-black overflow-auto flex items-center justify-center py-12"
+        className="w-full bg-black overflow-auto flex items-center justify-center pt-12 pb-[120px]"
         style={{
           minHeight: 'calc(100vh - 60px)',
         }}
@@ -326,6 +376,7 @@ function ContactSheetPageContent() {
           onHighlightsChange={setHighlights}
           onXMarksChange={setXMarks}
           filmStock={selectedFilmStock}
+          selectedHighlightType={selectedHighlightType}
         />
       </div>
     </div>
