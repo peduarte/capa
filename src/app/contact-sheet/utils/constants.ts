@@ -46,21 +46,6 @@ export const FILM_STOCKS: Record<FilmStock, FilmStockConfig> = {
       bottom: '0px',
     },
   },
-  'kodak-portra-400': {
-    id: 'kodak-portra-400',
-    name: 'Kodak Portra 400',
-    titleImage: '/kp400-title.png',
-    footerImage: '/kp400-footer.png',
-    color: '#DA7201',
-    smallIndex: {
-      bottom: '0px',
-      left: '90px',
-    },
-    largeIndex: {
-      left: '4px',
-      bottom: '0px',
-    },
-  },
   'ilford-xp2': {
     id: 'ilford-xp2',
     name: 'Ilford XP2',
@@ -73,6 +58,21 @@ export const FILM_STOCKS: Record<FilmStock, FilmStockConfig> = {
     },
     largeIndex: {
       right: '0px',
+      bottom: '0px',
+    },
+  },
+  'kodak-portra-400': {
+    id: 'kodak-portra-400',
+    name: 'Kodak Portra 400',
+    titleImage: '/kp400-title.png',
+    footerImage: '/kp400-footer.png',
+    color: '#DA7201',
+    smallIndex: {
+      bottom: '0px',
+      left: '90px',
+    },
+    largeIndex: {
+      left: '4px',
       bottom: '0px',
     },
   },
