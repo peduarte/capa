@@ -300,15 +300,14 @@ function ContactSheetPageContent() {
             ) : null}
           </div>
 
-          {uploadedImages.length > 0 ||
-            (showDemo && (
-              <DownloadButton
-                images={currentImages}
-                highlights={highlights}
-                xMarks={xMarks}
-                filmStock={selectedFilmStock}
-              />
-            ))}
+          {(uploadedImages.length > 0 || showDemo) && (
+            <DownloadButton
+              images={currentImages}
+              highlights={highlights}
+              xMarks={xMarks}
+              filmStock={selectedFilmStock}
+            />
+          )}
         </div>
       </div>
 

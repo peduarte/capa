@@ -126,18 +126,19 @@ export const NegativeStrip = ({
             }}
             onClick={event => handleFrameClick(frameNumber, event)}
           >
-            {imagePath && (
-              <div
-                className="relative"
-                style={{
-                  width: `${MEASUREMENTS.imageWidth}px`,
-                  height: `${MEASUREMENTS.imageHeight}px`,
-                }}
-                onClick={event => {
-                  event.stopPropagation();
-                  handleFrameClick(frameNumber, event);
-                }}
-              >
+            <div
+              className="relative"
+              style={{
+                width: `${MEASUREMENTS.imageWidth}px`,
+                height: `${MEASUREMENTS.imageHeight}px`,
+                backgroundColor: 'black',
+              }}
+              onClick={event => {
+                event.stopPropagation();
+                handleFrameClick(frameNumber, event);
+              }}
+            >
+              {imagePath && (
                 <Image
                   src={
                     imagePath.startsWith('blob:')
@@ -151,8 +152,8 @@ export const NegativeStrip = ({
                   crossOrigin="anonymous"
                   unoptimized={imagePath.startsWith('blob:')}
                 />
-              </div>
-            )}
+              )}
+            </div>
 
             {/* Film stock title overlay */}
             <div
