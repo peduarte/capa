@@ -75,12 +75,6 @@ export async function POST(request: NextRequest) {
       baseUrl
     );
     console.log('HTML generated, length:', html.length);
-    
-    // Debug: log highlights info and sample HTML when highlights exist
-    if (highlights.length > 0) {
-      console.log('Highlights detected:', highlights);
-      console.log('Sample HTML snippet:', html.substring(0, 1000));
-    }
 
     // Set the page content and wait for images to load
     console.log('Setting page content...');

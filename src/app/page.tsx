@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { ContactSheet } from './contact-sheet/components/ContactSheet';
 import { DownloadButton } from './contact-sheet/components/DownloadButton';
 import {
-  convertFilesToObjectUrls,
+  convertFilesToCompressedObjectUrls,
   getValidImages,
   getErrors,
   revokeObjectUrls,
@@ -164,7 +164,7 @@ function ContactSheetPageContent() {
       setErrors([]);
 
       try {
-        const results = await convertFilesToObjectUrls(files);
+        const results = await convertFilesToCompressedObjectUrls(files);
         const validImages = getValidImages(results);
         const fileErrors = getErrors(results);
 
