@@ -6,7 +6,11 @@ export const MEASUREMENTS = {
 };
 
 // Film stock types and configurations
-export type FilmStock = 'ilford-hp5' | 'kodak-portra-400' | 'ilford-xp2';
+export type FilmStock =
+  | 'ilford-hp5'
+  | 'kodak-portra-400'
+  | 'ilford-xp2'
+  | 'kodak-ultramax-400';
 
 export interface FilmStockConfig {
   id: FilmStock;
@@ -69,6 +73,21 @@ export const FILM_STOCKS: Record<FilmStock, FilmStockConfig> = {
     },
     largeIndex: {
       right: '0px',
+      bottom: '0px',
+    },
+  },
+  'kodak-ultramax-400': {
+    id: 'kodak-ultramax-400',
+    name: 'Kodak Ultramax 400',
+    titleImage: '/kum400-title.png',
+    footerImage: '/kum400-footer.png',
+    color: '#DA7201',
+    smallIndex: {
+      bottom: '0px',
+      left: '90px',
+    },
+    largeIndex: {
+      left: '4px',
       bottom: '0px',
     },
   },
