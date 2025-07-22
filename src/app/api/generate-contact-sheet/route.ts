@@ -213,7 +213,7 @@ async function generateContactSheetHTML(
               height: ${IMAGE_HEIGHT}px;
             ">
               <img
-                src="${imagePath.startsWith('data:') ? imagePath : `${baseUrl}/hp5/${imagePath}`}"
+                src="${imagePath.startsWith('data:') ? imagePath : `${baseUrl}/default-frames/${imagePath}`}"
                 alt="Frame ${frameNumber}"
                 style="
                   position: absolute;

@@ -142,7 +142,7 @@ export const NegativeStrip = ({
                   src={
                     imagePath.startsWith('blob:')
                       ? imagePath
-                      : `/hp5/${imagePath}`
+                      : `/default-frames/${imagePath}`
                   }
                   alt={`Frame ${imageIndex + 1}`}
                   width={MEASUREMENTS.imageWidth}
