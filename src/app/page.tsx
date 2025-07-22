@@ -9,6 +9,11 @@ import {
   getErrors,
   revokeObjectUrls,
 } from './contact-sheet/utils/imageUtils';
+import {
+  FilmStock,
+  FILM_STOCKS,
+  DEFAULT_FILM_STOCK,
+} from './contact-sheet/utils/constants';
 
 // Types for highlights and X marks
 interface FrameHighlight {
@@ -26,6 +31,8 @@ function ContactSheetPageContent() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [highlights, setHighlights] = useState<FrameHighlight[]>([]);
   const [xMarks, setXMarks] = useState<number[]>([]);
+  const [selectedFilmStock, setSelectedFilmStock] =
+    useState<FilmStock>(DEFAULT_FILM_STOCK);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadedImagesRef = useRef<string[]>([]); // Track images for cleanup
 
@@ -231,11 +238,28 @@ function ContactSheetPageContent() {
             )}
           </div>
 
+          {/* Center: Film Stock Selector */}
+          <div className="flex items-center space-x-2">
+            <select
+              id="film-stock"
+              value={selectedFilmStock}
+              onChange={e => setSelectedFilmStock(e.target.value as FilmStock)}
+              className="text-sm bg-black border border-gray-600 text-gray-300 px-3 py-1 rounded hover:border-gray-400 focus:border-white focus:outline-none transition-colors"
+            >
+              {Object.values(FILM_STOCKS).map(stock => (
+                <option key={stock.id} value={stock.id}>
+                  {stock.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Right: Download Button - only enabled when user uploads images */}
           <DownloadButton
             images={currentImages}
             highlights={highlights}
             xMarks={xMarks}
+            filmStock={selectedFilmStock}
           />
         </div>
       </div>
@@ -301,6 +325,7 @@ function ContactSheetPageContent() {
           xMarks={xMarks}
           onHighlightsChange={setHighlights}
           onXMarksChange={setXMarks}
+          filmStock={selectedFilmStock}
         />
       </div>
     </div>

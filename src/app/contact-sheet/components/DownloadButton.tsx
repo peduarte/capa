@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import download from '../utils/download';
+import { FilmStock } from '../utils/constants';
 
 interface FrameHighlight {
   frameNumber: number;
@@ -10,6 +11,7 @@ interface DownloadButtonProps {
   images: string[];
   highlights: FrameHighlight[];
   xMarks: number[];
+  filmStock: FilmStock;
   className?: string;
 }
 
@@ -17,6 +19,7 @@ export const DownloadButton = ({
   images,
   highlights,
   xMarks,
+  filmStock,
   className = '',
 }: DownloadButtonProps) => {
   const [isDownloading, setIsDownloading] = useState(false);
@@ -68,6 +71,7 @@ export const DownloadButton = ({
           images: processedImages,
           highlights,
           xMarks,
+          filmStock,
         }),
       });
 

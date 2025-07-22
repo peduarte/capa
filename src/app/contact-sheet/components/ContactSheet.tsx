@@ -1,6 +1,6 @@
 import React from 'react';
 import { NegativeStrip } from './NegativeStrip';
-import { MEASUREMENTS } from '../utils/constants';
+import { MEASUREMENTS, FilmStock } from '../utils/constants';
 
 interface FrameHighlight {
   frameNumber: number;
@@ -13,6 +13,7 @@ interface ContactSheetProps {
   xMarks: number[];
   onHighlightsChange: (highlights: FrameHighlight[]) => void;
   onXMarksChange: (xMarks: number[]) => void;
+  filmStock: FilmStock;
   ref: React.RefObject<HTMLDivElement | null>;
 }
 
@@ -22,6 +23,7 @@ export const ContactSheet = ({
   xMarks,
   onHighlightsChange,
   onXMarksChange,
+  filmStock,
   ref,
 }: ContactSheetProps) => {
   const numberOfStrips = Math.ceil(images.length / 6);
@@ -51,6 +53,7 @@ export const ContactSheet = ({
           xMarks={xMarks}
           onHighlightsChange={onHighlightsChange}
           onXMarksChange={onXMarksChange}
+          filmStock={filmStock}
         />
       ))}
     </div>

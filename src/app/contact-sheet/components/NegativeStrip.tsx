@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { MEASUREMENTS } from '../utils/constants';
+import { MEASUREMENTS, FilmStock, FILM_STOCKS } from '../utils/constants';
 
 interface FrameHighlight {
   frameNumber: number;
@@ -14,6 +14,7 @@ interface NegativeStripProps {
   xMarks: number[];
   onHighlightsChange: (highlights: FrameHighlight[]) => void;
   onXMarksChange: (xMarks: number[]) => void;
+  filmStock: FilmStock;
 }
 
 export const NegativeStrip = ({
@@ -23,6 +24,7 @@ export const NegativeStrip = ({
   xMarks,
   onHighlightsChange,
   onXMarksChange,
+  filmStock,
 }: NegativeStripProps) => {
   const [keysPressed, setKeysPressed] = useState<Set<string>>(new Set());
 
@@ -154,7 +156,7 @@ export const NegativeStrip = ({
               </div>
             )}
 
-            {/* Ilford title overlay */}
+            {/* Film stock title overlay */}
             <div
               className="absolute pointer-events-none"
               style={{
@@ -162,7 +164,7 @@ export const NegativeStrip = ({
                 left: 0,
                 width: '188px',
                 height: '11px',
-                backgroundImage: 'url(/ilford-title.png)',
+                backgroundImage: `url(${FILM_STOCKS[filmStock].titleImage})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
@@ -170,7 +172,7 @@ export const NegativeStrip = ({
               }}
             />
 
-            {/* Ilford footer overlay */}
+            {/* Film stock footer overlay */}
             <div
               className="absolute pointer-events-none"
               style={{
@@ -178,7 +180,7 @@ export const NegativeStrip = ({
                 left: 0,
                 width: '188px',
                 height: '11px',
-                backgroundImage: 'url(/ilford-footer.png)',
+                backgroundImage: `url(${FILM_STOCKS[filmStock].footerImage})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
@@ -190,12 +192,11 @@ export const NegativeStrip = ({
             <div
               className="absolute pointer-events-none"
               style={{
-                bottom: '0px',
-                left: '74px',
+                ...FILM_STOCKS[filmStock].smallIndex,
                 fontSize: '10px',
                 lineHeight: '1',
                 fontFamily: 'Courier, monospace',
-                color: 'white',
+                color: FILM_STOCKS[filmStock].color,
                 zIndex: 15,
                 textAlign: 'center',
                 width: '24px',
@@ -211,14 +212,15 @@ export const NegativeStrip = ({
             <div
               className="absolute pointer-events-none"
               style={{
-                right: '0px',
-                bottom: '0px',
+                ...FILM_STOCKS[filmStock].largeIndex,
+                textAlign: FILM_STOCKS[filmStock].largeIndex.right
+                  ? 'right'
+                  : 'left',
                 fontSize: '13px',
                 lineHeight: '1',
                 fontFamily: 'Courier, monospace',
-                color: 'white',
+                color: FILM_STOCKS[filmStock].color,
                 zIndex: 15,
-                textAlign: 'right',
                 fontWeight: 'bold',
                 opacity: '0.9',
               }}

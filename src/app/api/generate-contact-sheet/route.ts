@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import chromium from '@sparticuz/chromium';
-import { MEASUREMENTS } from '../../contact-sheet/utils/constants';
+import {
+  MEASUREMENTS,
+  FilmStock,
+  FILM_STOCKS,
+  DEFAULT_FILM_STOCK,
+} from '../../contact-sheet/utils/constants';
 
 // Types for the request payload
 interface FrameHighlight {
@@ -12,13 +17,19 @@ interface ContactSheetRequest {
   images: string[];
   highlights?: FrameHighlight[];
   xMarks?: number[];
+  filmStock?: FilmStock;
 }
 
 export async function POST(request: NextRequest) {
   try {
     console.log('API route called');
     const body: ContactSheetRequest = await request.json();
-    const { images, highlights = [], xMarks = [] } = body;
+    const {
+      images,
+      highlights = [],
+      xMarks = [],
+      filmStock = DEFAULT_FILM_STOCK,
+    } = body;
 
     console.log(
       'Received images:',
@@ -91,7 +102,8 @@ export async function POST(request: NextRequest) {
       images,
       highlights,
       xMarks,
-      baseUrl
+      baseUrl,
+      filmStock
     );
     console.log('HTML generated, length:', html.length);
 
@@ -142,7 +154,8 @@ async function generateContactSheetHTML(
   images: string[],
   highlights: FrameHighlight[],
   xMarks: number[],
-  baseUrl: string
+  baseUrl: string,
+  filmStock: FilmStock
 ): Promise<string> {
   const {
     frameWidth: FRAME_WIDTH,
@@ -217,7 +230,7 @@ async function generateContactSheetHTML(
               : ''
           }
           
-          <!-- Ilford title overlay -->
+          <!-- Film stock title overlay -->
           <div style="
             position: absolute;
             pointer-events: none;
@@ -225,14 +238,14 @@ async function generateContactSheetHTML(
             left: 0;
             width: 188px;
             height: 11px;
-            background-image: url('${baseUrl}/ilford-title.png');
+            background-image: url('${baseUrl}${FILM_STOCKS[filmStock].titleImage}');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
             z-index: 10;
           "></div>
 
-          <!-- Ilford footer overlay -->
+          <!-- Film stock footer overlay -->
           <div style="
             position: absolute;
             pointer-events: none;
@@ -240,23 +253,24 @@ async function generateContactSheetHTML(
             left: 0;
             width: 188px;
             height: 11px;
-            background-image: url('${baseUrl}/ilford-footer.png');
+            background-image: url('${baseUrl}${FILM_STOCKS[filmStock].footerImage}');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
             z-index: 10;
           "></div>
 
-          <!-- Frame index number (left) -->
+          <!-- Frame index number (small) -->
           <div style="
             position: absolute;
             pointer-events: none;
-            bottom: 0px;
-            left: 74px;
+            ${FILM_STOCKS[filmStock].smallIndex.bottom ? `bottom: ${FILM_STOCKS[filmStock].smallIndex.bottom};` : ''}
+            ${FILM_STOCKS[filmStock].smallIndex.left ? `left: ${FILM_STOCKS[filmStock].smallIndex.left};` : ''}
+            ${FILM_STOCKS[filmStock].smallIndex.right ? `right: ${FILM_STOCKS[filmStock].smallIndex.right};` : ''}
             font-size: 10px;
             line-height: 1;
             font-family: Courier, monospace;
-            color: white;
+            color: ${FILM_STOCKS[filmStock].color};
             z-index: 15;
             text-align: center;
             width: 24px;
@@ -266,18 +280,19 @@ async function generateContactSheetHTML(
             ▸${frameNumber}<span style="font-size: 8px;">A</span>
           </div>
 
-          <!-- Frame index number (right) -->
+          <!-- Frame index number (large) -->
           <div style="
             position: absolute;
             pointer-events: none;
-            right: 0px;
-            bottom: 0px;
+            ${FILM_STOCKS[filmStock].largeIndex.bottom ? `bottom: ${FILM_STOCKS[filmStock].largeIndex.bottom};` : ''}
+            ${FILM_STOCKS[filmStock].largeIndex.left ? `left: ${FILM_STOCKS[filmStock].largeIndex.left};` : ''}
+            ${FILM_STOCKS[filmStock].largeIndex.right ? `right: ${FILM_STOCKS[filmStock].largeIndex.right};` : ''}
             font-size: 13px;
             line-height: 1;
             font-family: Courier, monospace;
-            color: white;
+            color: ${FILM_STOCKS[filmStock].color};
             z-index: 15;
-            text-align: right;
+            text-align: ${FILM_STOCKS[filmStock].largeIndex.right ? 'right' : 'left'};
             font-weight: bold;
             opacity: 0.9;
           ">
