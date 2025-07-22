@@ -11,13 +11,13 @@ export const SUPPORTED_FORMATS = [
   'image/png',
   'image/webp',
 ];
-export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-export const MAX_IMAGE_DIMENSION = 4096; // 4K max width/height
+export const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB - increased for phone photos
+export const MAX_IMAGE_DIMENSION = 8192; // 8K max width/height - modern phones can go higher
 
-// Compression settings
-export const COMPRESSION_MAX_WIDTH = 1200; // Max width for compressed images
-export const COMPRESSION_MAX_HEIGHT = 1200; // Max height for compressed images
-export const COMPRESSION_QUALITY = 0.8; // JPEG quality (0.0 - 1.0)
+// Compression settings - optimized for contact sheet thumbnails (final display: 180x120)
+export const COMPRESSION_MAX_WIDTH = 540; // Max width for compressed images (3x display size)
+export const COMPRESSION_MAX_HEIGHT = 360; // Max height for compressed images (3x display size)
+export const COMPRESSION_QUALITY = 0.9; // JPEG quality (0.0 - 1.0) - slightly lower for smaller files
 
 export const validateImageFile = (
   file: File
