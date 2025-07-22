@@ -1,41 +1,27 @@
 import React from 'react';
 import { NegativeStrip } from './NegativeStrip';
-import { HighlightOverlay } from './HighlightOverlay';
-import useIsSafari from '../hooks/useIsSafari';
+import { MEASUREMENTS } from '../utils/constants';
 
 interface ContactSheetProps {
   images: string[];
-  showHighlights?: boolean;
-  onFrameClick?: (frameNumber: number, event: React.MouseEvent) => void;
-  className?: string;
+  ref: React.RefObject<HTMLDivElement | null>;
 }
 
-export const ContactSheet = React.memo(
-  ({
-    images,
-    showHighlights = false,
-    onFrameClick,
-    className,
-  }: ContactSheetProps) => {
-    const isSafari = useIsSafari();
-    return (
-      <div
-        className={`w-fit mx-auto relative ${className || ''}`}
-        data-contact-sheet
-      >
-        {Array.from({ length: Math.ceil(images.length / 6) }, (_, i) => (
-          <NegativeStrip
-            key={`strip-${i}`}
-            images={images}
-            startIndex={i * 6}
-            onFrameClick={onFrameClick}
-            isSafari={isSafari}
-          />
-        ))}
-        {showHighlights && <HighlightOverlay />}
-      </div>
-    );
-  }
-);
-
-ContactSheet.displayName = 'ContactSheet';
+export const ContactSheet = ({ images, ref }: ContactSheetProps) => {
+  const numberOfStrips = Math.ceil(images.length / 6);
+  return (
+    <div
+      ref={ref}
+      className="relative"
+      style={{
+        width: MEASUREMENTS.frameWidth * 6,
+        height: MEASUREMENTS.frameHeight * numberOfStrips + numberOfStrips * 16,
+        minWidth: '0',
+      }}
+    >
+      {Array.from({ length: numberOfStrips }, (_, i) => (
+        <NegativeStrip key={`strip-${i}`} images={images} startIndex={i * 6} />
+      ))}
+    </div>
+  );
+};

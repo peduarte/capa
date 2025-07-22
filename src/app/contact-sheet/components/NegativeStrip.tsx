@@ -136,7 +136,7 @@ export const NegativeStrip = ({ images, startIndex }: NegativeStripProps) => {
                   alt={`Frame ${imageIndex + 1}`}
                   width={MEASUREMENTS.imageWidth}
                   height={MEASUREMENTS.imageHeight}
-                  className="absolute inset-0 w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-full object-cover pointer-events-none"
                   crossOrigin="anonymous"
                   unoptimized={imagePath.startsWith('blob:')}
                 />

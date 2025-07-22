@@ -4,10 +4,6 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { ContactSheet } from './contact-sheet/components/ContactSheet';
 import { DownloadButton } from './contact-sheet/components/DownloadButton';
 import {
-  ContactSheetProvider,
-  useContactSheet,
-} from './contact-sheet/context/ContactSheetContext';
-import {
   convertFilesToObjectUrls,
   getValidImages,
   getErrors,
@@ -15,18 +11,8 @@ import {
 } from './contact-sheet/utils/imageUtils';
 
 function ContactSheetPageContent() {
-  const {
-    frameHighlights,
-    xMarkedFrames,
-    setFrameHighlight,
-    setXMark,
-    clearFrameHighlight,
-    clearXMark,
-    clearAllHighlights,
-    contactSheetRef,
-  } = useContactSheet();
+  const contactSheetRef = useRef<HTMLDivElement>(null);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
-  const [keysPressed, setKeysPressed] = useState<Set<string>>(new Set());
   const [errors, setErrors] = useState<string[]>([]);
   const [showDemo, setShowDemo] = useState(true); // Start with demo shown
   const [isDragOver, setIsDragOver] = useState(false);
@@ -91,8 +77,7 @@ function ContactSheetPageContent() {
     uploadedImagesRef.current = []; // Update ref
     setShowDemo(true);
     setErrors([]);
-    clearAllHighlights();
-  }, [uploadedImages, clearAllHighlights]);
+  }, [uploadedImages]);
 
   // Handle upload button click
   const handleUploadClick = () => {
@@ -138,8 +123,6 @@ function ContactSheetPageContent() {
             ...validImages,
           ]; // Update ref
           setShowDemo(false);
-          // Clear highlights when new images are added
-          clearAllHighlights();
         }
 
         if (fileErrors.length > 0) {
@@ -156,22 +139,10 @@ function ContactSheetPageContent() {
         setIsProcessing(false);
       }
     },
-    [uploadedImages.length, clearAllHighlights]
+    [uploadedImages.length, uploadedImages]
   );
 
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      setKeysPressed(prev => new Set(prev).add(event.key.toLowerCase()));
-    };
-
-    const handleKeyUp = (event: KeyboardEvent) => {
-      setKeysPressed(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(event.key.toLowerCase());
-        return newSet;
-      });
-    };
-
     const handleGlobalDragOver = (e: DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
@@ -200,15 +171,11 @@ function ContactSheetPageContent() {
     };
 
     // Add global event listeners - these will only be registered ONCE
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
     window.addEventListener('dragover', handleGlobalDragOver);
     window.addEventListener('dragleave', handleGlobalDragLeave);
     window.addEventListener('drop', handleGlobalDrop);
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('dragover', handleGlobalDragOver);
       window.removeEventListener('dragleave', handleGlobalDragLeave);
       window.removeEventListener('drop', handleGlobalDrop);
@@ -223,46 +190,11 @@ function ContactSheetPageContent() {
     };
   }, []); // Empty dependency array - only cleanup on unmount
 
-  const handleFrameClick = (frameNumber: number, event: React.MouseEvent) => {
-    // Get the clicked frame element to capture its position
-    const target = event.currentTarget as HTMLElement;
-    const rect = target.getBoundingClientRect();
-    const containerRect = contactSheetRef.current?.getBoundingClientRect();
-
-    if (!containerRect) return;
-
-    // Calculate position relative to the contact sheet container
-    const position = {
-      left: rect.left - containerRect.left,
-      top: rect.top - containerRect.top,
-      width: rect.width,
-      height: rect.height,
-    };
-
-    if (keysPressed.has('x')) {
-      // Handle X marking
-      if (xMarkedFrames.has(frameNumber)) {
-        clearXMark(frameNumber);
-      } else {
-        setXMark(frameNumber, position);
-      }
-    } else {
-      // Handle normal highlights (rectangle/circle)
-      const highlightType = event.altKey ? 'circle' : 'rectangle';
-
-      if (frameHighlights.has(frameNumber)) {
-        clearFrameHighlight(frameNumber);
-      } else {
-        setFrameHighlight(frameNumber, position, highlightType);
-      }
-    }
-  };
-
   return (
     <div className="min-h-screen relative">
-      {/* Sticky Top Navigation Bar */}
-      <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-sm border-b border-gray-700/50">
-        <div className="flex items-center justify-between px-6 py-4">
+      {/* Sticky Top Navigation Bar*/}
+      <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-sm border-b border-gray-700/50 h-[60px] flex items-center justify-center">
+        <div className="flex items-center justify-between px-6 py-4 w-full">
           {/* Left: Upload Button and Guidance Text or Clear Button */}
           <div className="flex items-center space-x-4">
             {/* Upload Button */}
@@ -284,17 +216,12 @@ function ContactSheetPageContent() {
                 Clear
               </button>
             ) : (
-              <span className="text-sm text-gray-300">
-                or drag them anywhere to create your own contact sheet
-              </span>
+              <span className="text-sm text-gray-300">or drag them</span>
             )}
           </div>
 
           {/* Right: Download Button - only enabled when user uploads images */}
-          <DownloadButton
-            contactSheetRef={contactSheetRef}
-            disabled={isProcessing || isDragOver || uploadedImages.length === 0}
-          />
+          <DownloadButton contactSheetRef={contactSheetRef} />
         </div>
       </div>
 
@@ -309,62 +236,54 @@ function ContactSheetPageContent() {
         disabled={isProcessing || isDragOver}
       />
 
-      {/* Main Content */}
-      <div className="p-8">
-        {/* Drag Overlay */}
-        {isDragOver && (
-          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
-            <div className="py-8 px-12 border-1 border-dashed border-white/50">
-              <div className="text-center">
-                <h3 className="text-l font-semibold ">Let your frames go</h3>
-              </div>
+      {/* Drag Overlay */}
+      {isDragOver && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+          <div className="py-8 px-12 border-1 border-dashed border-white/50">
+            <div className="text-center">
+              <h3 className="text-l font-semibold ">Let your frames go</h3>
             </div>
-          </div>
-        )}
-
-        {/* Processing Overlay */}
-        {isProcessing && (
-          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
-            <div className="py-8 px-12 border-1 border-dashed border-white/50">
-              <div className="text-center">
-                <h3 className="text-l font-semibold ">
-                  Creating your contact sheet...
-                </h3>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="min-h-screen flex flex-col justify-center items-center">
-          {/* Error Display - only show if errors exist */}
-          {errors.length > 0 && (
-            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg max-w-md">
-              <ul className="text-red-700 dark:text-red-300 text-sm space-y-1">
-                {errors.map((error, index) => (
-                  <li key={index}>• {error}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Contact Sheet - Centered vertically */}
-          <div ref={contactSheetRef} className="contact-sheet-container">
-            <ContactSheet
-              images={currentImages}
-              showHighlights={true}
-              onFrameClick={handleFrameClick}
-            />
           </div>
         </div>
+      )}
+
+      {/* Processing Overlay */}
+      {isProcessing && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+          <div className="py-8 px-12 border-1 border-dashed border-white/50">
+            <div className="text-center">
+              <h3 className="text-l font-semibold ">
+                Creating your contact sheet...
+              </h3>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error Display - only show if errors exist */}
+      {errors.length > 0 && (
+        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg max-w-md">
+          <ul className="text-red-700 dark:text-red-300 text-sm space-y-1">
+            {errors.map((error, index) => (
+              <li key={index}>• {error}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Contact Sheet - Centered vertically */}
+      <div
+        className="w-full bg-black flex items-center justify-center overflow-auto"
+        style={{
+          height: 'calc(100vh - 60px)',
+        }}
+      >
+        <ContactSheet ref={contactSheetRef} images={currentImages} />
       </div>
     </div>
   );
 }
 
 export default function Home() {
-  return (
-    <ContactSheetProvider>
-      <ContactSheetPageContent />
-    </ContactSheetProvider>
-  );
+  return <ContactSheetPageContent />;
 }

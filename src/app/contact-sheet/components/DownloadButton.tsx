@@ -4,13 +4,11 @@ import download from '../utils/download';
 
 interface DownloadButtonProps {
   contactSheetRef: React.RefObject<HTMLElement | null>;
-  disabled?: boolean;
   className?: string;
 }
 
 export const DownloadButton = ({
   contactSheetRef,
-  disabled = true, // Disabled by default
   className = '',
 }: DownloadButtonProps) => {
   const [isDownloading, setIsDownloading] = useState(false);
@@ -31,7 +29,10 @@ export const DownloadButton = ({
       const filename = `contact-sheet-${timestamp}.png`;
 
       // Generate image using ray-so inspired approach
-      const dataUrl = await toPng(contactSheetRef.current);
+      const dataUrl = await toPng(contactSheetRef.current, {
+        width: Number(contactSheetRef.current.style.width.replace('px', '')),
+        height: Number(contactSheetRef.current.style.height.replace('px', '')),
+      });
 
       // Download using simple utility
       download(dataUrl, filename);
@@ -44,8 +45,6 @@ export const DownloadButton = ({
         if (err.message.includes('CORS')) {
           errorMessage =
             'Image loading blocked. Try refreshing and uploading images again.';
-        } else if (err.message.includes('canvas')) {
-          errorMessage = 'Canvas rendering failed. Please try again.';
         } else {
           errorMessage = err.message || 'Unknown error occurred';
         }
@@ -61,10 +60,10 @@ export const DownloadButton = ({
     <div className="relative">
       <button
         onClick={handleDownload}
-        disabled={disabled || isDownloading}
+        disabled={isDownloading}
         className={`
           px-4 py-2 text-sm rounded-lg transition-colors
-          ${disabled ? 'hidden' : 'bg-white text-black'}
+          bg-white text-black
           ${className}
         `}
       >

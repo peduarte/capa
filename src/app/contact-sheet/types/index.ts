@@ -2,7 +2,6 @@ export type HighlightType = 'rectangle' | 'circle';
 
 export interface ContactSheetProps {
   images: string[];
-  showHighlights?: boolean;
   selectedFrames?: Map<number, HighlightType>;
   xMarkedFrames?: Set<number>;
   onFrameClick?: (frameNumber: number, event: React.MouseEvent) => void;
