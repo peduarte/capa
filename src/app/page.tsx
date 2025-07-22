@@ -9,7 +9,6 @@ import {
   getErrors,
   revokeObjectUrls,
 } from './contact-sheet/utils/imageUtils';
-import { MEASUREMENTS } from './contact-sheet/utils/constants';
 
 // Types for highlights and X marks
 interface FrameHighlight {
@@ -25,7 +24,6 @@ function ContactSheetPageContent() {
   const [showDemo, setShowDemo] = useState(true); // Start with demo shown
   const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [scale, setScale] = useState(1);
   const [highlights, setHighlights] = useState<FrameHighlight[]>([]);
   const [xMarks, setXMarks] = useState<number[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -79,46 +77,6 @@ function ContactSheetPageContent() {
   // Use uploaded images if available, otherwise demo images if enabled
   const currentImages =
     uploadedImages.length > 0 ? uploadedImages : showDemo ? demoImageList : [];
-
-  // Calculate scale for contact sheet to fit in viewport
-  useEffect(() => {
-    const calculateScale = () => {
-      if (!containerRef.current) return;
-
-      const containerRect = containerRef.current.getBoundingClientRect();
-      const padding = 40; // Some breathing room
-
-      const availableWidth = containerRect.width - padding;
-      const availableHeight = containerRect.height - padding;
-
-      // Calculate contact sheet dimensions
-      const numberOfStrips = Math.ceil(currentImages.length / 6);
-      const sheetWidth = MEASUREMENTS.frameWidth * 6;
-      const sheetHeight =
-        MEASUREMENTS.frameHeight * numberOfStrips + numberOfStrips * 16;
-
-      const scaleX = availableWidth / sheetWidth;
-      const scaleY = availableHeight / sheetHeight;
-
-      // Use the smaller scale to ensure it fits in both dimensions
-      // Don't scale up beyond 1 to avoid pixelation
-      const newScale = Math.min(scaleX, scaleY, 1);
-      setScale(newScale);
-    };
-
-    // Initial calculation
-    calculateScale();
-
-    // Listen for window resize
-    const resizeObserver = new ResizeObserver(calculateScale);
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current);
-    }
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [currentImages.length]);
 
   // Clear contact sheet back to demo
   const clearContactSheet = useCallback(() => {
@@ -328,24 +286,22 @@ function ContactSheetPageContent() {
         </div>
       )}
 
-      {/* Contact Sheet - Centered vertically */}
+      {/* Contact Sheet - Scrollable at natural size */}
       <div
         ref={containerRef}
-        className="w-full bg-black flex items-center justify-center overflow-hidden"
+        className="w-full bg-black overflow-auto flex items-center justify-center py-12"
         style={{
-          height: 'calc(100vh - 60px)',
+          minHeight: 'calc(100vh - 60px)',
         }}
       >
-        <div style={{ transform: `scale(${scale})` }}>
-          <ContactSheet
-            ref={contactSheetRef}
-            images={currentImages}
-            highlights={highlights}
-            xMarks={xMarks}
-            onHighlightsChange={setHighlights}
-            onXMarksChange={setXMarks}
-          />
-        </div>
+        <ContactSheet
+          ref={contactSheetRef}
+          images={currentImages}
+          highlights={highlights}
+          xMarks={xMarks}
+          onHighlightsChange={setHighlights}
+          onXMarksChange={setXMarks}
+        />
       </div>
     </div>
   );

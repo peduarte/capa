@@ -29,7 +29,7 @@ export const NegativeStrip = ({
   const framesInStrip = Math.min(6, images.length - startIndex);
   const stripIndex = Math.floor(startIndex / 6);
   const seed = stripIndex * 123.456;
-  const rotation = Math.sin(seed) * 0.5;
+  const rotation = Math.sin(seed) * 0.25;
   const stripWidth = framesInStrip * MEASUREMENTS.frameWidth;
 
   // Keyboard event handling
