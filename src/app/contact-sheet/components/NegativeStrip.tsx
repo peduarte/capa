@@ -10,11 +10,20 @@ interface FrameHighlight {
 interface NegativeStripProps {
   images: string[];
   startIndex: number;
+  highlights: FrameHighlight[];
+  xMarks: number[];
+  onHighlightsChange: (highlights: FrameHighlight[]) => void;
+  onXMarksChange: (xMarks: number[]) => void;
 }
 
-export const NegativeStrip = ({ images, startIndex }: NegativeStripProps) => {
-  const [highlights, setHighlights] = useState<FrameHighlight[]>([]);
-  const [xMarks, setXMarks] = useState<number[]>([]);
+export const NegativeStrip = ({
+  images,
+  startIndex,
+  highlights,
+  xMarks,
+  onHighlightsChange,
+  onXMarksChange,
+}: NegativeStripProps) => {
   const [keysPressed, setKeysPressed] = useState<Set<string>>(new Set());
 
   const framesInStrip = Math.min(6, images.length - startIndex);
@@ -49,10 +58,10 @@ export const NegativeStrip = ({ images, startIndex }: NegativeStripProps) => {
   const handleFrameClick = (frameNumber: number, event: React.MouseEvent) => {
     if (keysPressed.has('x')) {
       // Handle X marking
-      setXMarks(prev =>
-        prev.includes(frameNumber)
-          ? prev.filter(num => num !== frameNumber)
-          : [...prev, frameNumber]
+      onXMarksChange(
+        xMarks.includes(frameNumber)
+          ? xMarks.filter(num => num !== frameNumber)
+          : [...xMarks, frameNumber]
       );
     } else {
       // Handle highlights (default/scribble for option key/circle for cmd key)
@@ -61,16 +70,19 @@ export const NegativeStrip = ({ images, startIndex }: NegativeStripProps) => {
         : event.altKey
           ? 'scribble'
           : 'default';
-      setHighlights(prev => {
-        const existing = prev.find(h => h.frameNumber === frameNumber);
-        if (existing) {
-          // Remove existing highlight
-          return prev.filter(h => h.frameNumber !== frameNumber);
-        } else {
-          // Add new highlight
-          return [...prev, { frameNumber, type: highlightType }];
-        }
-      });
+      const existing = highlights.find(h => h.frameNumber === frameNumber);
+      if (existing) {
+        // Remove existing highlight
+        onHighlightsChange(
+          highlights.filter(h => h.frameNumber !== frameNumber)
+        );
+      } else {
+        // Add new highlight
+        onHighlightsChange([
+          ...highlights,
+          { frameNumber, type: highlightType },
+        ]);
+      }
     }
   };
 
