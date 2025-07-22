@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
 import { MEASUREMENTS } from '../../contact-sheet/utils/constants';
 
 // Types for the request payload
@@ -53,7 +53,13 @@ export async function POST(request: NextRequest) {
         '--disable-gpu',
         '--disable-web-security', // Allow cross-origin images
         '--allow-running-insecure-content',
+        '--single-process',
+        '--no-zygote',
       ],
+      executablePath:
+        process.env.NODE_ENV === 'production'
+          ? process.env.PUPPETEER_EXECUTABLE_PATH
+          : puppeteer.executablePath(),
     });
 
     console.log('Browser launched successfully');

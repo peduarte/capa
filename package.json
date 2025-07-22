@@ -17,6 +17,7 @@
     "html-to-image": "^1.11.13",
     "next": "15.4.1",
     "puppeteer": "^24.14.0",
+    "puppeteer-core": "^24.14.0",
     "react": "19.1.0",
     "react-dom": "^19.1.0"
   },
