@@ -2,12 +2,28 @@ import React from 'react';
 import { NegativeStrip } from './NegativeStrip';
 import { MEASUREMENTS } from '../utils/constants';
 
+interface FrameHighlight {
+  frameNumber: number;
+  type: 'default' | 'scribble' | 'circle';
+}
+
 interface ContactSheetProps {
   images: string[];
+  highlights: FrameHighlight[];
+  xMarks: number[];
+  onHighlightsChange: (highlights: FrameHighlight[]) => void;
+  onXMarksChange: (xMarks: number[]) => void;
   ref: React.RefObject<HTMLDivElement | null>;
 }
 
-export const ContactSheet = ({ images, ref }: ContactSheetProps) => {
+export const ContactSheet = ({
+  images,
+  highlights,
+  xMarks,
+  onHighlightsChange,
+  onXMarksChange,
+  ref,
+}: ContactSheetProps) => {
   const numberOfStrips = Math.ceil(images.length / 6);
   const maxFramesPerStrip = Math.min(6, images.length);
   const maxStripWidth = maxFramesPerStrip * MEASUREMENTS.frameWidth;
@@ -27,7 +43,15 @@ export const ContactSheet = ({ images, ref }: ContactSheetProps) => {
       }}
     >
       {Array.from({ length: numberOfStrips }, (_, i) => (
-        <NegativeStrip key={`strip-${i}`} images={images} startIndex={i * 6} />
+        <NegativeStrip
+          key={`strip-${i}`}
+          images={images}
+          startIndex={i * 6}
+          highlights={highlights}
+          xMarks={xMarks}
+          onHighlightsChange={onHighlightsChange}
+          onXMarksChange={onXMarksChange}
+        />
       ))}
     </div>
   );

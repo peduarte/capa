@@ -1,21 +1,29 @@
 import { useState } from 'react';
-import { toPng } from '../utils/image';
 import download from '../utils/download';
 
+interface FrameHighlight {
+  frameNumber: number;
+  type: 'default' | 'scribble' | 'circle';
+}
+
 interface DownloadButtonProps {
-  contactSheetRef: React.RefObject<HTMLElement | null>;
+  images: string[];
+  highlights: FrameHighlight[];
+  xMarks: number[];
   className?: string;
 }
 
 export const DownloadButton = ({
-  contactSheetRef,
+  images,
+  highlights,
+  xMarks,
   className = '',
 }: DownloadButtonProps) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleDownload = async () => {
-    if (!contactSheetRef.current || isDownloading) return;
+    if (!images.length || isDownloading) return;
 
     setIsDownloading(true);
     setError(null);
@@ -28,14 +36,54 @@ export const DownloadButton = ({
         .replace(/:/g, '-');
       const filename = `contact-sheet-${timestamp}.png`;
 
-      // Generate image using ray-so inspired approach
-      const dataUrl = await toPng(contactSheetRef.current, {
-        width: Number(contactSheetRef.current.style.width.replace('px', '')),
-        height: Number(contactSheetRef.current.style.height.replace('px', '')),
+      // Convert blob URLs to data URLs if needed for server processing
+      const processedImages = await Promise.all(
+        images.map(async imagePath => {
+          if (imagePath.startsWith('blob:')) {
+            try {
+              const response = await fetch(imagePath);
+              const blob = await response.blob();
+              return new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+              });
+            } catch (error) {
+              console.warn('Failed to convert blob URL:', imagePath, error);
+              return imagePath; // fallback to original path
+            }
+          }
+          return imagePath;
+        })
+      );
+
+      // Call the Puppeteer API
+      const response = await fetch('/api/generate-contact-sheet', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          images: processedImages,
+          highlights,
+          xMarks,
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      // Get the image blob
+      const imageBlob = await response.blob();
+      const dataUrl = URL.createObjectURL(imageBlob);
 
       // Download using simple utility
       download(dataUrl, filename);
+
+      // Clean up the blob URL
+      setTimeout(() => URL.revokeObjectURL(dataUrl), 1000);
     } catch (err) {
       console.error('Download error:', err);
 
@@ -45,6 +93,8 @@ export const DownloadButton = ({
         if (err.message.includes('CORS')) {
           errorMessage =
             'Image loading blocked. Try refreshing and uploading images again.';
+        } else if (err.message.includes('Server error')) {
+          errorMessage = 'Server error generating image. Please try again.';
         } else {
           errorMessage = err.message || 'Unknown error occurred';
         }

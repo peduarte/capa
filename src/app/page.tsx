@@ -11,6 +11,12 @@ import {
 } from './contact-sheet/utils/imageUtils';
 import { MEASUREMENTS } from './contact-sheet/utils/constants';
 
+// Types for highlights and X marks
+interface FrameHighlight {
+  frameNumber: number;
+  type: 'default' | 'scribble' | 'circle';
+}
+
 function ContactSheetPageContent() {
   const contactSheetRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -20,6 +26,8 @@ function ContactSheetPageContent() {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [scale, setScale] = useState(1);
+  const [highlights, setHighlights] = useState<FrameHighlight[]>([]);
+  const [xMarks, setXMarks] = useState<number[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadedImagesRef = useRef<string[]>([]); // Track images for cleanup
 
@@ -120,6 +128,8 @@ function ContactSheetPageContent() {
     uploadedImagesRef.current = []; // Update ref
     setShowDemo(true);
     setErrors([]);
+    setHighlights([]);
+    setXMarks([]);
   }, [uploadedImages]);
 
   // Handle upload button click
@@ -182,7 +192,7 @@ function ContactSheetPageContent() {
         setIsProcessing(false);
       }
     },
-    [uploadedImages.length, uploadedImages]
+    [uploadedImages]
   );
 
   useEffect(() => {
@@ -264,7 +274,11 @@ function ContactSheetPageContent() {
           </div>
 
           {/* Right: Download Button - only enabled when user uploads images */}
-          <DownloadButton contactSheetRef={contactSheetRef} />
+          <DownloadButton
+            images={currentImages}
+            highlights={highlights}
+            xMarks={xMarks}
+          />
         </div>
       </div>
 
@@ -323,7 +337,14 @@ function ContactSheetPageContent() {
         }}
       >
         <div style={{ transform: `scale(${scale})` }}>
-          <ContactSheet ref={contactSheetRef} images={currentImages} />
+          <ContactSheet
+            ref={contactSheetRef}
+            images={currentImages}
+            highlights={highlights}
+            xMarks={xMarks}
+            onHighlightsChange={setHighlights}
+            onXMarksChange={setXMarks}
+          />
         </div>
       </div>
     </div>
