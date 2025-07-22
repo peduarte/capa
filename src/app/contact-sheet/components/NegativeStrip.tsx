@@ -1,14 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import {
-  MEASUREMENTS,
-  getStripRotation,
-  HighlightType,
-} from '../utils/constants';
+import { MEASUREMENTS } from '../utils/constants';
 
 interface FrameHighlight {
   frameNumber: number;
-  type: HighlightType;
+  type: 'default' | 'scribble' | 'circle';
 }
 
 interface NegativeStripProps {
@@ -23,7 +19,8 @@ export const NegativeStrip = ({ images, startIndex }: NegativeStripProps) => {
 
   const framesInStrip = Math.min(6, images.length - startIndex);
   const stripIndex = Math.floor(startIndex / 6);
-  const rotation = getStripRotation(stripIndex);
+  const seed = stripIndex * 123.456;
+  const rotation = Math.sin(seed) * 0.5;
   const stripWidth = framesInStrip * MEASUREMENTS.frameWidth;
 
   // Keyboard event handling
