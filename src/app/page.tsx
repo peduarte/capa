@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import * as Select from '@radix-ui/react-select';
+import * as Tooltip from '@radix-ui/react-tooltip';
+import { RotateCounterClockwiseIcon } from '@radix-ui/react-icons';
 import { ContactSheet } from './contact-sheet/components/ContactSheet';
 import { DownloadButton } from './contact-sheet/components/DownloadButton';
 import { HighlightTypeSelector } from './contact-sheet/components/HighlightTypeSelector';
@@ -443,286 +445,300 @@ function ContactSheetPageContent() {
   );
 
   return (
-    <div className="min-h-screen relative">
-      {/* Sticky Top Navigation Bar*/}
-      <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-sm border-b border-white/20 h-[60px] flex items-center justify-center">
-        <div className="flex items-center justify-between px-6 py-4 w-full">
-          {/* Left: Upload Button and Guidance Text or Clear Button */}
-          <div className="flex items-center space-x-4">
-            {/* Upload Button */}
-            <button
-              onClick={handleUploadClick}
-              className="text-sm text-white hover:text-white px-3 py-1 rounded border border-white"
-              disabled={isProcessing || isDragOver}
-            >
-              Choose images
-            </button>
-
-            {/* Demo Button or Clear Button */}
-            {uploadedImages.length > 0 ? (
+    <Tooltip.Provider>
+      <div className="min-h-screen relative z-0">
+        {/* Sticky Top Navigation Bar*/}
+        <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-sm border-b border-white/20 h-[60px] flex items-center justify-center">
+          <div className="flex items-center justify-between px-6 py-4 w-full">
+            {/* Left: Upload Button and Guidance Text or Clear Button */}
+            <div className="flex items-center space-x-4">
+              {/* Upload Button */}
               <button
-                onClick={clearContactSheet}
-                className="text-sm text-white px-3 py-1"
+                onClick={handleUploadClick}
+                className="text-sm text-white hover:text-white px-3 py-1 rounded border border-white"
                 disabled={isProcessing || isDragOver}
               >
-                Reset
+                Choose images
               </button>
-            ) : !showDemo ? (
-              <button
-                onClick={() => setShowDemo(true)}
-                className="text-sm text-white px-3 py-1"
-                disabled={isProcessing || isDragOver}
-              >
-                or see a demo
-              </button>
-            ) : null}
-          </div>
 
-          {(uploadedImages.length > 0 || showDemo) && (
-            <DownloadButton
-              images={currentImages}
-              highlights={highlights}
-              xMarks={xMarks}
-              filmStock={selectedFilmStock}
-              rotation={rotation}
-            />
-          )}
-        </div>
-      </div>
-
-      {/* Bottom toolbar - only show when there are images or demo is active */}
-      {(uploadedImages.length > 0 || showDemo) && (
-        <div className="fixed bottom-0 z-40 bg-black/80 backdrop-blur-sm flex gap-2 md:gap-4 left-1/2 -translate-x-1/2 p-2 md:p-4 rounded-tl-lg rounded-tr-lg border-1 border-white/20">
-          <div className="flex items-center space-x-2">
-            <Select.Root
-              value={selectedFilmStock}
-              onValueChange={value => setSelectedFilmStock(value as FilmStock)}
-            >
-              <Select.Trigger className="px-2 py-1 text-xs text-white rounded focus:outline-none flex items-center justify-between text-nowrap">
-                <Select.Value />
-                <Select.Icon className="ml-1">
-                  <svg
-                    width="15"
-                    height="15"
-                    viewBox="0 0 15 15"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M3.13523 6.15803C3.3241 5.95657 3.64052 5.94637 3.84197 6.13523L7.5 9.56464L11.158 6.13523C11.3595 5.94637 11.6759 5.95657 11.8648 6.15803C12.0536 6.35949 12.0434 6.67591 11.842 6.86477L7.84197 10.6148C7.64964 10.7951 7.35036 10.7951 7.15803 10.6148L3.15803 6.86477C2.95657 6.67591 2.94637 6.35949 3.13523 6.15803Z"
-                      fill="currentColor"
-                      fillRule="evenodd"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </Select.Icon>
-              </Select.Trigger>
-              <Select.Portal>
-                <Select.Content className="bg-black border border-gray-600 rounded shadow-lg z-50">
-                  <Select.Viewport className="p-1">
-                    {Object.values(FILM_STOCKS).map(stock => (
-                      <Select.Item
-                        key={stock.id}
-                        value={stock.id}
-                        className="text-sm text-white px-3 py-1 rounded cursor-pointer hover:bg-white/20 focus:bg-white focus:text-black focus:outline-none"
-                      >
-                        <Select.ItemText>{stock.name}</Select.ItemText>
-                      </Select.Item>
-                    ))}
-                  </Select.Viewport>
-                </Select.Content>
-              </Select.Portal>
-            </Select.Root>
-          </div>
-
-          {/* Rotate Buttons */}
-          <div className="flex items-center space-x-1">
-            <button
-              onClick={rotateContactSheetLeft}
-              className="px-2 py-1 text-xs text-white rounded hover:bg-white/20 focus:outline-none flex items-center"
-              title={`Rotate left (currently ${rotation}°)`}
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M3 12c0-4.97 4.03-9 9-9s9 4.03 9 9-4.03 9-9 9c-2.12 0-4.07-.74-5.61-1.98" />
-                <path d="M7 16l-4 4 4 4" />
-              </svg>
-            </button>
-            <button
-              onClick={rotateContactSheetRight}
-              className="px-2 py-1 text-xs text-white rounded hover:bg-white/20 focus:outline-none flex items-center"
-              title={`Rotate right (currently ${rotation}°)`}
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c2.12 0 4.07.74 5.61 1.98" />
-                <path d="M17 8l4-4-4-4" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Center-Right: Highlight Type Selector */}
-          <HighlightTypeSelector
-            selectedType={selectedHighlightType}
-            onTypeChange={setSelectedHighlightType}
-            hideLoupeOption={isTouchDevice}
-          />
-        </div>
-      )}
-
-      {/* Hidden File Input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        multiple
-        accept="image/jpeg,image/jpg,image/png,image/webp"
-        onChange={handleFileInputChange}
-        className="hidden"
-        disabled={isProcessing || isDragOver}
-      />
-
-      {/* Drag Overlay */}
-      {isDragOver && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
-          <div className="py-8 px-12 border-1 border-dashed border-white/50">
-            <div className="text-center">
-              <h3 className="text-l font-semibold ">Let your frames go</h3>
+              {/* Demo Button or Clear Button */}
+              {uploadedImages.length > 0 ? (
+                <button
+                  onClick={clearContactSheet}
+                  className="text-sm text-white px-3 py-1"
+                  disabled={isProcessing || isDragOver}
+                >
+                  Reset
+                </button>
+              ) : !showDemo ? (
+                <button
+                  onClick={() => setShowDemo(true)}
+                  className="text-sm text-white px-3 py-1"
+                  disabled={isProcessing || isDragOver}
+                >
+                  or see a demo
+                </button>
+              ) : null}
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* Processing Overlay */}
-      {isProcessing && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
-          <div className="py-8 px-12 border-1 border-dashed border-white/50">
-            <div className="text-center">
-              <h3 className="text-l font-semibold ">
-                Creating your contact sheet...
-              </h3>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Error Display - only show if errors exist */}
-      {errors.length > 0 && (
-        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg max-w-md">
-          <ul className="text-red-700 dark:text-red-300 text-sm space-y-1">
-            {errors.map((error, index) => (
-              <li key={index}>• {error}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Contact Sheet - Scrollable at natural size */}
-      <div
-        ref={containerRef}
-        className={`w-full bg-black overflow-auto flex items-center justify-center pt-12 ${
-          uploadedImages.length > 0 || showDemo ? 'pb-[120px]' : 'pb-12'
-        }`}
-        style={{
-          minHeight: 'calc(100vh - 60px)',
-        }}
-      >
-        <div
-          ref={loupeContactSheetRef}
-          className={
-            uploadedImages.length === 0 && !showDemo
-              ? 'pointer-events-none'
-              : ''
-          }
-          style={{
-            cursor:
-              selectedHighlightType === 'loupe' && !isTouchDevice
-                ? `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='${loupeSize}' height='${loupeSize}' viewBox='0 0 ${loupeSize} ${loupeSize}'%3E%3Ccircle cx='${loupeSize / 2}' cy='${loupeSize / 2}' r='${loupeSize / 2 - 2}' fill='none' stroke='%23ffffff' stroke-width='2' opacity='0.8'/%3E%3C/svg%3E") ${loupeSize / 2} ${loupeSize / 2}, auto`
-                : selectedHighlightType === 'delete'
-                  ? 'crosshair'
-                  : 'default',
-            transform: `rotate(${rotation}deg)`,
-          }}
-        >
-          <ContactSheet
-            ref={contactSheetRef}
-            images={currentImages}
-            highlights={highlights}
-            xMarks={xMarks}
-            onHighlightsChange={setHighlights}
-            onXMarksChange={setXMarks}
-            filmStock={selectedFilmStock}
-            selectedHighlightType={selectedHighlightType}
-            onMouseMove={handleContactSheetMouseMove}
-            onMouseLeave={handleContactSheetMouseLeave}
-            onImageDelete={handleImageDelete}
-          />
-        </div>
-
-        {/* Loupe overlay */}
-        {loupeVisible && !isTouchDevice && (
-          <div
-            className="fixed z-50 pointer-events-none"
-            style={{
-              left: `${loupePosition.x}px`,
-              top: `${loupePosition.y}px`,
-              width: `${loupeSize}px`,
-              height: `${loupeSize}px`,
-              border: '3px solid white',
-              borderRadius: '50%',
-              background: 'black',
-              overflow: 'hidden',
-              boxShadow: '0 0 20px rgba(0,0,0,0.5)',
-            }}
-          >
-            {/* Scaled ContactSheet using existing components */}
-            <div
-              style={{
-                transform: `scale(${loupeScaleFactor}) translate(${
-                  loupeSize / 2 / loupeScaleFactor -
-                  loupeOffset.x *
-                    (Math.min(6, currentImages.length) *
-                      MEASUREMENTS.frameWidth +
-                      32)
-                }px, ${
-                  loupeSize / 2 / loupeScaleFactor -
-                  loupeOffset.y *
-                    (MEASUREMENTS.frameHeight *
-                      Math.ceil(currentImages.length / 6) +
-                      (Math.ceil(currentImages.length / 6) - 1) * 16 +
-                      32)
-                }px)`,
-                transformOrigin: '0 0',
-                willChange: 'transform',
-              }}
-            >
-              <ContactSheet
-                ref={contactSheetRef}
+            {(uploadedImages.length > 0 || showDemo) && (
+              <DownloadButton
                 images={currentImages}
                 highlights={highlights}
                 xMarks={xMarks}
-                onHighlightsChange={() => {}} // No-op for loupe
-                onXMarksChange={() => {}} // No-op for loupe
                 filmStock={selectedFilmStock}
-                selectedHighlightType="" // Disable interactions in loupe
-                onImageDelete={() => {}} // No-op for loupe
+                rotation={rotation}
               />
+            )}
+          </div>
+        </div>
+
+        {/* Bottom toolbar - only show when there are images or demo is active */}
+        {(uploadedImages.length > 0 || showDemo) && (
+          <div className="fixed bottom-0 z-40 bg-black/80 backdrop-blur-sm flex gap-2 md:gap-4 left-1/2 -translate-x-1/2 p-2 md:p-4 rounded-tl-lg rounded-tr-lg border-1 border-white/20">
+            <div className="flex items-center space-x-2">
+              <Select.Root
+                value={selectedFilmStock}
+                onValueChange={value =>
+                  setSelectedFilmStock(value as FilmStock)
+                }
+              >
+                <Select.Trigger className="px-2 py-1 text-xs text-white rounded hover:bg-white/20 focus:outline-none flex items-center justify-between text-nowrap">
+                  <Select.Value />
+                  <Select.Icon className="ml-1">
+                    <svg
+                      width="15"
+                      height="15"
+                      viewBox="0 0 15 15"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M3.13523 6.15803C3.3241 5.95657 3.64052 5.94637 3.84197 6.13523L7.5 9.56464L11.158 6.13523C11.3595 5.94637 11.6759 5.95657 11.8648 6.15803C12.0536 6.35949 12.0434 6.67591 11.842 6.86477L7.84197 10.6148C7.64964 10.7951 7.35036 10.7951 7.15803 10.6148L3.15803 6.86477C2.95657 6.67591 2.94637 6.35949 3.13523 6.15803Z"
+                        fill="currentColor"
+                        fillRule="evenodd"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </Select.Icon>
+                </Select.Trigger>
+                <Select.Portal>
+                  <Select.Content className="bg-black border border-gray-600 rounded shadow-lg z-50">
+                    <Select.Viewport className="p-1">
+                      {Object.values(FILM_STOCKS).map(stock => (
+                        <Select.Item
+                          key={stock.id}
+                          value={stock.id}
+                          className="text-sm text-white px-3 py-1 rounded cursor-pointer hover:bg-white/20 focus:bg-white focus:text-black focus:outline-none"
+                        >
+                          <Select.ItemText>{stock.name}</Select.ItemText>
+                        </Select.Item>
+                      ))}
+                    </Select.Viewport>
+                  </Select.Content>
+                </Select.Portal>
+              </Select.Root>
+            </div>
+
+            {/* Rotate Buttons */}
+            <div className="flex items-center space-x-1">
+              <Tooltip.Root>
+                <Tooltip.Trigger asChild>
+                  <button
+                    onClick={rotateContactSheetLeft}
+                    className="px-2 py-1 text-xs text-white rounded hover:bg-white/20 focus:outline-none flex items-center"
+                  >
+                    <RotateCounterClockwiseIcon className="w-4 h-4" />
+                  </button>
+                </Tooltip.Trigger>
+                <Tooltip.Portal>
+                  <Tooltip.Content
+                    className="bg-black text-white px-2 py-1 text-xs rounded border border-gray-600"
+                    sideOffset={5}
+                  >
+                    Rotate left
+                    <Tooltip.Arrow className="fill-black" />
+                  </Tooltip.Content>
+                </Tooltip.Portal>
+              </Tooltip.Root>
+              <Tooltip.Root>
+                <Tooltip.Trigger asChild>
+                  <button
+                    onClick={rotateContactSheetRight}
+                    className="px-2 py-1 text-xs text-white rounded hover:bg-white/20 focus:outline-none flex items-center"
+                  >
+                    <RotateCounterClockwiseIcon
+                      className="w-4 h-4"
+                      style={{ transform: 'scaleX(-1)' }}
+                    />
+                  </button>
+                </Tooltip.Trigger>
+                <Tooltip.Portal>
+                  <Tooltip.Content
+                    className="bg-black text-white px-2 py-1 text-xs rounded border border-gray-600"
+                    sideOffset={5}
+                  >
+                    Rotate right
+                    <Tooltip.Arrow className="fill-black" />
+                  </Tooltip.Content>
+                </Tooltip.Portal>
+              </Tooltip.Root>
+            </div>
+
+            {/* Separator */}
+            <div className="w-px h-6 bg-gray-500"></div>
+
+            {/* Center-Right: Highlight Type Selector */}
+            <HighlightTypeSelector
+              selectedType={selectedHighlightType}
+              onTypeChange={setSelectedHighlightType}
+              hideLoupeOption={isTouchDevice}
+            />
+          </div>
+        )}
+
+        {/* Hidden File Input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept="image/jpeg,image/jpg,image/png,image/webp"
+          onChange={handleFileInputChange}
+          className="hidden"
+          disabled={isProcessing || isDragOver}
+        />
+
+        {/* Drag Overlay */}
+        {isDragOver && (
+          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+            <div className="py-8 px-12 border-1 border-dashed border-white/50">
+              <div className="text-center">
+                <h3 className="text-l font-semibold ">Let your frames go</h3>
+              </div>
             </div>
           </div>
         )}
+
+        {/* Processing Overlay */}
+        {isProcessing && (
+          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+            <div className="py-8 px-12 border-1 border-dashed border-white/50">
+              <div className="text-center">
+                <h3 className="text-l font-semibold ">
+                  Creating your contact sheet...
+                </h3>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Error Display - only show if errors exist */}
+        {errors.length > 0 && (
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg max-w-md">
+            <ul className="text-red-700 dark:text-red-300 text-sm space-y-1">
+              {errors.map((error, index) => (
+                <li key={index}>• {error}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Contact Sheet - Scrollable at natural size */}
+        <div
+          ref={containerRef}
+          className={`w-full bg-black overflow-auto flex items-center justify-center pt-12 ${
+            uploadedImages.length > 0 || showDemo ? 'pb-[120px]' : 'pb-12'
+          }`}
+          style={{
+            minHeight: 'calc(100vh - 60px)',
+          }}
+        >
+          <div
+            ref={loupeContactSheetRef}
+            className={
+              uploadedImages.length === 0 && !showDemo
+                ? 'pointer-events-none'
+                : ''
+            }
+            style={{
+              cursor:
+                selectedHighlightType === 'loupe' && !isTouchDevice
+                  ? `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='${loupeSize}' height='${loupeSize}' viewBox='0 0 ${loupeSize} ${loupeSize}'%3E%3Ccircle cx='${loupeSize / 2}' cy='${loupeSize / 2}' r='${loupeSize / 2 - 2}' fill='none' stroke='%23ffffff' stroke-width='2' opacity='0.8'/%3E%3C/svg%3E") ${loupeSize / 2} ${loupeSize / 2}, auto`
+                  : selectedHighlightType === 'delete'
+                    ? 'crosshair'
+                    : 'default',
+              transform: `rotate(${rotation}deg)`,
+            }}
+          >
+            <ContactSheet
+              ref={contactSheetRef}
+              images={currentImages}
+              highlights={highlights}
+              xMarks={xMarks}
+              onHighlightsChange={setHighlights}
+              onXMarksChange={setXMarks}
+              filmStock={selectedFilmStock}
+              selectedHighlightType={selectedHighlightType}
+              onMouseMove={handleContactSheetMouseMove}
+              onMouseLeave={handleContactSheetMouseLeave}
+              onImageDelete={handleImageDelete}
+            />
+          </div>
+
+          {/* Loupe overlay */}
+          {loupeVisible && !isTouchDevice && (
+            <div
+              className="fixed z-50 pointer-events-none"
+              style={{
+                left: `${loupePosition.x}px`,
+                top: `${loupePosition.y}px`,
+                width: `${loupeSize}px`,
+                height: `${loupeSize}px`,
+                border: '3px solid white',
+                borderRadius: '50%',
+                background: 'black',
+                overflow: 'hidden',
+                boxShadow: '0 0 20px rgba(0,0,0,0.5)',
+              }}
+            >
+              {/* Scaled ContactSheet using existing components */}
+              <div
+                style={{
+                  transform: `scale(${loupeScaleFactor}) translate(${
+                    loupeSize / 2 / loupeScaleFactor -
+                    loupeOffset.x *
+                      (Math.min(6, currentImages.length) *
+                        MEASUREMENTS.frameWidth +
+                        32)
+                  }px, ${
+                    loupeSize / 2 / loupeScaleFactor -
+                    loupeOffset.y *
+                      (MEASUREMENTS.frameHeight *
+                        Math.ceil(currentImages.length / 6) +
+                        (Math.ceil(currentImages.length / 6) - 1) * 16 +
+                        32)
+                  }px)`,
+                  transformOrigin: '0 0',
+                  willChange: 'transform',
+                }}
+              >
+                <ContactSheet
+                  ref={contactSheetRef}
+                  images={currentImages}
+                  highlights={highlights}
+                  xMarks={xMarks}
+                  onHighlightsChange={() => {}} // No-op for loupe
+                  onXMarksChange={() => {}} // No-op for loupe
+                  filmStock={selectedFilmStock}
+                  selectedHighlightType="" // Disable interactions in loupe
+                  onImageDelete={() => {}} // No-op for loupe
+                />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </Tooltip.Provider>
   );
 }
 

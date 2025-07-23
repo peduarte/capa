@@ -16,3 +16,7 @@ body {
     'Helvetica Neue',
     sans-serif;
 }
+
+radix-portal > div {
+  z-index: 10;
+}
