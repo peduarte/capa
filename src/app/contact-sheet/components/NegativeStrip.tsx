@@ -34,7 +34,7 @@ export const NegativeStrip = ({
   const rotation = Math.sin(seed) * 0.25;
   const stripWidth = framesInStrip * MEASUREMENTS.frameWidth;
 
-  const handleFrameClick = (frameNumber: number, event: React.MouseEvent) => {
+  const handleFrameClick = (frameNumber: number) => {
     // Do nothing if no highlight type is selected or if loupe is selected
     if (!selectedHighlightType || selectedHighlightType === 'loupe') {
       return;
@@ -124,7 +124,7 @@ export const NegativeStrip = ({
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat',
             }}
-            onClick={event => handleFrameClick(frameNumber, event)}
+            onClick={() => handleFrameClick(frameNumber)}
           >
             <div
               className="relative"
@@ -135,7 +135,7 @@ export const NegativeStrip = ({
               }}
               onClick={event => {
                 event.stopPropagation();
-                handleFrameClick(frameNumber, event);
+                handleFrameClick(frameNumber);
               }}
             >
               {imagePath && (

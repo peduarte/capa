@@ -308,13 +308,7 @@ function ContactSheetPageContent() {
       });
       setLoupeOffset({ x: normalizedX, y: normalizedY });
     },
-    [
-      selectedHighlightType,
-      currentImages,
-      loupeSize,
-      loupeScaleFactor,
-      isTouchDevice,
-    ]
+    [selectedHighlightType, currentImages, loupeSize, isTouchDevice]
   );
 
   const handleContactSheetMouseLeave = useCallback(() => {

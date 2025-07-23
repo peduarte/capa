@@ -115,7 +115,7 @@ export const DownloadButton = ({
       <button
         onClick={handleDownload}
         disabled={isDownloading}
-        className="text-sm bg-white text-black hover:text-black px-3 py-1 rounded border disabled:opacity-30"
+        className={`text-sm bg-white text-black hover:text-black px-3 py-1 rounded border disabled:opacity-30 ${className}`}
       >
         {isDownloading ? 'Downloading...' : 'Download contact sheet'}
       </button>
