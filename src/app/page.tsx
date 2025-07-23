@@ -15,6 +15,7 @@ import {
   FilmStock,
   FILM_STOCKS,
   DEFAULT_FILM_STOCK,
+  MEASUREMENTS,
 } from './contact-sheet/utils/constants';
 
 // Types for highlights and X marks
@@ -39,6 +40,40 @@ function ContactSheetPageContent() {
     useState<string>('rectangle');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadedImagesRef = useRef<string[]>([]); // Track images for cleanup
+
+  // Loupe configuration
+  const loupeSize = 188; // Adjust this value to change loupe size
+  const loupeScaleFactor = 2; // Adjust this value to change magnification level
+
+  // Loupe state
+  const [loupeVisible, setLoupeVisible] = useState(false);
+  const [loupePosition, setLoupePosition] = useState({ x: 0, y: 0 });
+  const [loupeOffset, setLoupeOffset] = useState({ x: 0, y: 0 });
+  const loupeContactSheetRef = useRef<HTMLDivElement>(null);
+
+  // Touch device detection
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+
+  useEffect(() => {
+    // Check if device supports touch
+    const checkTouchDevice = () => {
+      const isTouch =
+        'ontouchstart' in window ||
+        navigator.maxTouchPoints > 0 ||
+        /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        );
+
+      setIsTouchDevice(isTouch);
+
+      // If on touch device and loupe is selected, reset to rectangle
+      if (isTouch && selectedHighlightType === 'loupe') {
+        setSelectedHighlightType('rectangle');
+      }
+    };
+
+    checkTouchDevice();
+  }, [selectedHighlightType]);
 
   // Keyboard shortcuts for highlight type selection
   useEffect(() => {
@@ -71,6 +106,11 @@ function ContactSheetPageContent() {
         case 'r':
           setSelectedHighlightType('rectangle');
           break;
+        case 'l':
+          if (!isTouchDevice) {
+            setSelectedHighlightType('loupe');
+          }
+          break;
         default:
           return;
       }
@@ -83,7 +123,7 @@ function ContactSheetPageContent() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [isTouchDevice]);
 
   // Demo image list (complete list from prototype)
   const demoImageList = useMemo(
@@ -215,6 +255,73 @@ function ContactSheetPageContent() {
     },
     [uploadedImages]
   );
+
+  // Loupe mouse handlers
+  const handleContactSheetMouseMove = useCallback(
+    (event: React.MouseEvent) => {
+      if (
+        selectedHighlightType !== 'loupe' ||
+        !loupeContactSheetRef.current ||
+        isTouchDevice
+      )
+        return;
+
+      const rect = loupeContactSheetRef.current.getBoundingClientRect();
+      const mouseX = event.clientX - rect.left;
+      const mouseY = event.clientY - rect.top;
+
+      // Calculate the contact sheet dimensions
+      const numberOfStrips = Math.ceil(currentImages.length / 6);
+      const maxFramesPerStrip = Math.min(6, currentImages.length);
+      const maxStripWidth = maxFramesPerStrip * MEASUREMENTS.frameWidth;
+      const sheetWidth = maxStripWidth + 32; // Including padding
+      const sheetHeight =
+        MEASUREMENTS.frameHeight * numberOfStrips +
+        (numberOfStrips - 1) * 16 +
+        32;
+
+      // Check if we're near the contact sheet (with some tolerance)
+      const tolerance = 20;
+      if (
+        mouseX < -tolerance ||
+        mouseX > sheetWidth + tolerance ||
+        mouseY < -tolerance ||
+        mouseY > sheetHeight + tolerance
+      ) {
+        setLoupeVisible(false);
+        return;
+      }
+
+      // For the magnified view, we want to show exactly what's under the cursor
+      // Use the actual mouse position (not clamped) for the most accurate representation
+      // The ContactSheet component will handle what to show outside its bounds
+
+      // Calculate normalized position (0-1) across the entire sheet including padding
+      // This ensures 1:1 correspondence between main view and loupe view
+      const normalizedX = mouseX / sheetWidth;
+      const normalizedY = mouseY / sheetHeight;
+
+      setLoupeVisible(true);
+      setLoupePosition({
+        x: event.clientX - loupeSize / 2,
+        y: event.clientY - loupeSize / 2,
+      });
+      setLoupeOffset({ x: normalizedX, y: normalizedY });
+    },
+    [
+      selectedHighlightType,
+      currentImages,
+      loupeSize,
+      loupeScaleFactor,
+      isTouchDevice,
+    ]
+  );
+
+  const handleContactSheetMouseLeave = useCallback(() => {
+    if (selectedHighlightType === 'loupe' && !isTouchDevice) {
+      setLoupeVisible(false);
+    }
+  }, [selectedHighlightType, isTouchDevice]);
 
   useEffect(() => {
     const handleGlobalDragOver = (e: DragEvent) => {
@@ -360,6 +467,7 @@ function ContactSheetPageContent() {
           <HighlightTypeSelector
             selectedType={selectedHighlightType}
             onTypeChange={setSelectedHighlightType}
+            hideLoupeOption={isTouchDevice}
           />
         </div>
       )}
@@ -421,11 +529,18 @@ function ContactSheetPageContent() {
         }}
       >
         <div
+          ref={loupeContactSheetRef}
           className={
             uploadedImages.length === 0 && !showDemo
               ? 'pointer-events-none'
               : ''
           }
+          style={{
+            cursor:
+              selectedHighlightType === 'loupe' && !isTouchDevice
+                ? `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='${loupeSize}' height='${loupeSize}' viewBox='0 0 ${loupeSize} ${loupeSize}'%3E%3Ccircle cx='${loupeSize / 2}' cy='${loupeSize / 2}' r='${loupeSize / 2 - 2}' fill='none' stroke='%23ffffff' stroke-width='2' opacity='0.8'/%3E%3C/svg%3E") ${loupeSize / 2} ${loupeSize / 2}, auto`
+                : 'default',
+          }}
         >
           <ContactSheet
             ref={contactSheetRef}
@@ -436,8 +551,61 @@ function ContactSheetPageContent() {
             onXMarksChange={setXMarks}
             filmStock={selectedFilmStock}
             selectedHighlightType={selectedHighlightType}
+            onMouseMove={handleContactSheetMouseMove}
+            onMouseLeave={handleContactSheetMouseLeave}
           />
         </div>
+
+        {/* Loupe overlay */}
+        {loupeVisible && !isTouchDevice && (
+          <div
+            className="fixed z-50 pointer-events-none"
+            style={{
+              left: `${loupePosition.x}px`,
+              top: `${loupePosition.y}px`,
+              width: `${loupeSize}px`,
+              height: `${loupeSize}px`,
+              border: '3px solid white',
+              borderRadius: '50%',
+              background: 'black',
+              overflow: 'hidden',
+              boxShadow: '0 0 20px rgba(0,0,0,0.5)',
+            }}
+          >
+            {/* Scaled ContactSheet using existing components */}
+            <div
+              style={{
+                transform: `scale(${loupeScaleFactor}) translate(${
+                  loupeSize / 2 / loupeScaleFactor -
+                  loupeOffset.x *
+                    (Math.min(6, currentImages.length) *
+                      MEASUREMENTS.frameWidth +
+                      32)
+                }px, ${
+                  loupeSize / 2 / loupeScaleFactor -
+                  loupeOffset.y *
+                    (MEASUREMENTS.frameHeight *
+                      Math.ceil(currentImages.length / 6) +
+                      (Math.ceil(currentImages.length / 6) - 1) * 16 +
+                      32)
+                }px)`,
+                transformOrigin: '0 0',
+                willChange: 'transform',
+              }}
+            >
+              <ContactSheet
+                ref={contactSheetRef}
+                images={currentImages}
+                highlights={highlights}
+                xMarks={xMarks}
+                onHighlightsChange={() => {}} // No-op for loupe
+                onXMarksChange={() => {}} // No-op for loupe
+                filmStock={selectedFilmStock}
+                selectedHighlightType="" // Disable interactions in loupe
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

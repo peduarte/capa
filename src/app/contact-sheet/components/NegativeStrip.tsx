@@ -35,8 +35,8 @@ export const NegativeStrip = ({
   const stripWidth = framesInStrip * MEASUREMENTS.frameWidth;
 
   const handleFrameClick = (frameNumber: number, event: React.MouseEvent) => {
-    // Do nothing if no highlight type is selected
-    if (!selectedHighlightType) {
+    // Do nothing if no highlight type is selected or if loupe is selected
+    if (!selectedHighlightType || selectedHighlightType === 'loupe') {
       return;
     }
 

@@ -4,11 +4,13 @@ import * as ToggleGroup from '@radix-ui/react-toggle-group';
 interface HighlightTypeSelectorProps {
   selectedType: string;
   onTypeChange: (type: string) => void;
+  hideLoupeOption?: boolean;
 }
 
 export const HighlightTypeSelector = ({
   selectedType,
   onTypeChange,
+  hideLoupeOption = false,
 }: HighlightTypeSelectorProps) => {
   return (
     <div className="flex items-center space-x-2 text-sm">
@@ -44,6 +46,14 @@ export const HighlightTypeSelector = ({
         >
           Cross
         </ToggleGroup.Item>
+        {!hideLoupeOption && (
+          <ToggleGroup.Item
+            value="loupe"
+            className="px-2 py-1 text-xs text-white focus:outline-none data-[state=on]:bg-white data-[state=on]:text-black rounded"
+          >
+            Loupe
+          </ToggleGroup.Item>
+        )}
       </ToggleGroup.Root>
     </div>
   );

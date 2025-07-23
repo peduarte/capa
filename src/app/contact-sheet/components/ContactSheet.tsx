@@ -16,6 +16,8 @@ interface ContactSheetProps {
   filmStock: FilmStock;
   selectedHighlightType: string;
   ref: React.RefObject<HTMLDivElement | null>;
+  onMouseMove?: (event: React.MouseEvent) => void;
+  onMouseLeave?: () => void;
 }
 
 export const ContactSheet = ({
@@ -27,6 +29,8 @@ export const ContactSheet = ({
   filmStock,
   selectedHighlightType,
   ref,
+  onMouseMove,
+  onMouseLeave,
 }: ContactSheetProps) => {
   const numberOfStrips = Math.ceil(images.length / 6);
   const maxFramesPerStrip = Math.min(6, images.length);
@@ -34,7 +38,6 @@ export const ContactSheet = ({
 
   return (
     <div
-      ref={ref}
       className="relative bg-black"
       style={{
         width: maxStripWidth + 32,
@@ -45,7 +48,12 @@ export const ContactSheet = ({
         minWidth: '0',
         padding: '16px',
       }}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
     >
+      {/* Forward the original ref to the first child for download functionality */}
+      <div ref={ref} className="absolute inset-0 pointer-events-none" />
+
       {Array.from({ length: numberOfStrips }, (_, i) => (
         <NegativeStrip
           key={`strip-${i}`}
