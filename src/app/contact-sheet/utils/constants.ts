@@ -41,7 +41,12 @@ export const DEFAULT_FILM_STOCK: FilmStock = 'ilford-hp5';
 // New object-based state management types
 export interface Frame {
   src: string;
-  highlights: ('default' | 'scribble' | 'circle' | 'cross')[];
+  highlights: {
+    default: boolean;
+    circle: boolean;
+    scribble: boolean;
+    cross: boolean;
+  };
   fileName?: string; // Optional original filename
   uploadedAt?: number; // Optional timestamp
 }

@@ -22,6 +22,7 @@ import {
   ContactSheetState,
   FrameHighlight,
 } from './contact-sheet/utils/constants';
+import { defaultFrameData } from './contact-sheet/utils/defaultFrameData';
 
 function ContactSheetPageContent() {
   const contactSheetRef = useRef<HTMLDivElement>(null);
@@ -154,89 +155,8 @@ function ContactSheetPageContent() {
     };
   }, [isTouchDevice]);
 
-  // Demo frame data (complete list from prototype)
-  const demoData: ContactSheetState = {
-    frames: {
-      demo_0: { src: 'frame-1.jpeg', highlights: [] },
-      demo_1: { src: 'frame-2.jpeg', highlights: [] },
-      demo_2: { src: 'frame-3.jpeg', highlights: [] },
-      demo_3: { src: 'frame-4.jpeg', highlights: [] },
-      demo_4: { src: 'frame-5.jpeg', highlights: [] },
-      demo_5: { src: 'frame-6.jpeg', highlights: [] },
-      demo_6: { src: 'frame-7.jpeg', highlights: [] },
-      demo_7: { src: 'frame-8.jpeg', highlights: [] },
-      demo_8: { src: 'frame-9.jpeg', highlights: [] },
-      demo_9: { src: 'frame-10.jpeg', highlights: [] },
-      demo_10: { src: 'frame-11.jpeg', highlights: [] },
-      demo_11: { src: 'frame-12.jpeg', highlights: [] },
-      demo_12: { src: 'frame-13.jpeg', highlights: [] },
-      demo_13: { src: 'frame-14.jpeg', highlights: [] },
-      demo_14: { src: 'frame-15.jpeg', highlights: [] },
-      demo_15: { src: 'frame-16.jpeg', highlights: [] },
-      demo_16: { src: 'frame-17.jpeg', highlights: [] },
-      demo_17: { src: 'frame-18.jpeg', highlights: [] },
-      demo_18: { src: 'frame-19.jpeg', highlights: [] },
-      demo_19: { src: 'frame-20.jpeg', highlights: [] },
-      demo_20: { src: 'frame-21.jpeg', highlights: [] },
-      demo_21: { src: 'frame-22.jpeg', highlights: [] },
-      demo_22: { src: 'frame-23.jpeg', highlights: [] },
-      demo_23: { src: 'frame-24.jpeg', highlights: [] },
-      demo_24: { src: 'frame-25.jpeg', highlights: [] },
-      demo_25: { src: 'frame-26.jpeg', highlights: [] },
-      demo_26: { src: 'frame-27.jpeg', highlights: [] },
-      demo_27: { src: 'frame-28.jpeg', highlights: [] },
-      demo_28: { src: 'frame-29.jpeg', highlights: [] },
-      demo_29: { src: 'frame-30.jpeg', highlights: [] },
-      demo_30: { src: 'frame-31.jpeg', highlights: [] },
-      demo_31: { src: 'frame-32.jpeg', highlights: [] },
-      demo_32: { src: 'frame-33.jpeg', highlights: [] },
-      demo_33: { src: 'frame-34.jpeg', highlights: [] },
-      demo_34: { src: 'frame-35.jpeg', highlights: [] },
-      demo_35: { src: 'frame-36.jpeg', highlights: [] },
-      demo_36: { src: 'frame-37.jpeg', highlights: [] },
-      demo_37: { src: 'frame-38.jpeg', highlights: [] },
-    },
-    frameOrder: [
-      'demo_0',
-      'demo_1',
-      'demo_2',
-      'demo_3',
-      'demo_4',
-      'demo_5',
-      'demo_6',
-      'demo_7',
-      'demo_8',
-      'demo_9',
-      'demo_10',
-      'demo_11',
-      'demo_12',
-      'demo_13',
-      'demo_14',
-      'demo_15',
-      'demo_16',
-      'demo_17',
-      'demo_18',
-      'demo_19',
-      'demo_20',
-      'demo_21',
-      'demo_22',
-      'demo_23',
-      'demo_24',
-      'demo_25',
-      'demo_26',
-      'demo_27',
-      'demo_28',
-      'demo_29',
-      'demo_30',
-      'demo_31',
-      'demo_32',
-      'demo_33',
-      'demo_34',
-      'demo_35',
-      'demo_36',
-      'demo_37',
-    ],
-  };
+  // Demo frame data (loaded from external TypeScript file)
+  const demoData: ContactSheetState = defaultFrameData;
 
   // Create array of 14 empty frames for default view
   const emptyFrames = useMemo(() => Array(14).fill(''), []);
@@ -250,7 +170,12 @@ function ContactSheetPageContent() {
       const id = `empty_${index}`;
       frames[id] = {
         src: '',
-        highlights: [],
+        highlights: {
+          default: false,
+          circle: false,
+          scribble: false,
+          cross: false,
+        },
       };
       frameOrder.push(id);
     });
@@ -281,9 +206,9 @@ function ContactSheetPageContent() {
     const highlights: FrameHighlight[] = [];
     contactSheetState.frameOrder.forEach((frameId, index) => {
       const frame = contactSheetState.frames[frameId];
-      frame.highlights.forEach(type => {
-        if (type !== 'cross') {
-          // Exclude cross marks from highlights
+      // Check each highlight type and add active ones (excluding cross)
+      Object.entries(frame.highlights).forEach(([type, isActive]) => {
+        if (isActive && type !== 'cross') {
           highlights.push({
             frameNumber: index + 1,
             type: type as 'default' | 'scribble' | 'circle',
@@ -298,7 +223,7 @@ function ContactSheetPageContent() {
     const xMarks: number[] = [];
     contactSheetState.frameOrder.forEach((frameId, index) => {
       const frame = contactSheetState.frames[frameId];
-      if (frame.highlights.includes('cross')) {
+      if (frame.highlights.cross) {
         xMarks.push(index + 1);
       }
     });
@@ -372,7 +297,12 @@ function ContactSheetPageContent() {
             const id = `frame_${Date.now()}_${index}`;
             newFrames[id] = {
               src,
-              highlights: [],
+              highlights: {
+                default: false,
+                circle: false,
+                scribble: false,
+                cross: false,
+              },
               uploadedAt: Date.now(),
             };
             newFrameOrder.push(id);
@@ -574,7 +504,7 @@ function ContactSheetPageContent() {
               </button>
 
               {/* Demo Button or Clear Button */}
-              {contactSheetState.frameOrder.length > 0 ? (
+              {contactSheetState.frameOrder.length > 0 && !showDemo ? (
                 <button
                   onClick={clearContactSheet}
                   className="text-sm text-white px-3 py-1"
@@ -591,7 +521,7 @@ function ContactSheetPageContent() {
                   className="text-sm text-white px-3 py-1"
                   disabled={isProcessing || isDragOver}
                 >
-                  or see a demo
+                  View demo
                 </button>
               ) : null}
             </div>
@@ -612,7 +542,7 @@ function ContactSheetPageContent() {
         {/* Bottom toolbar - only show when there are images or demo is active */}
         {(contactSheetState.frameOrder.length > 0 || showDemo) && (
           <div className="fixed bottom-0 z-40 bg-black/80 backdrop-blur-sm flex gap-2 md:gap-4 left-1/2 -translate-x-1/2 p-2 md:p-4 rounded-tl-lg rounded-tr-lg border-1 border-white/20">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 w-[100px]">
               <Select.Root
                 value={selectedFilmStock}
                 onValueChange={value =>
@@ -639,7 +569,10 @@ function ContactSheetPageContent() {
                   </Select.Icon>
                 </Select.Trigger>
                 <Select.Portal>
-                  <Select.Content className="bg-black border border-gray-600 rounded shadow-lg z-50">
+                  <Select.Content
+                    position="popper"
+                    className="bg-black border border-gray-600 rounded shadow-lg z-50"
+                  >
                     <Select.Viewport className="p-1">
                       {Object.values(FILM_STOCKS).map(stock => (
                         <Select.Item

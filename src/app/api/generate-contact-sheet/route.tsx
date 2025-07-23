@@ -26,7 +26,12 @@ interface ContactSheetRequestLegacy {
 // New object-based format
 interface Frame {
   src: string;
-  highlights: ('default' | 'scribble' | 'circle' | 'cross')[];
+  highlights: {
+    default: boolean;
+    circle: boolean;
+    scribble: boolean;
+    cross: boolean;
+  };
 }
 
 interface ContactSheetRequestNew {
@@ -68,15 +73,17 @@ export async function POST(request: NextRequest) {
       frameOrder.forEach((id, index) => {
         const frame = frames[id];
 
-        // Add highlights for this frame (excluding cross marks which go to separate array)
-        frame.highlights.forEach(type => {
-          if (type === 'cross') {
-            xMarks.push(index + 1);
-          } else {
-            highlights.push({
-              frameNumber: index + 1,
-              type: type as 'default' | 'scribble' | 'circle',
-            });
+        // Check each highlight type and convert to legacy format
+        Object.entries(frame.highlights).forEach(([type, isActive]) => {
+          if (isActive) {
+            if (type === 'cross') {
+              xMarks.push(index + 1);
+            } else {
+              highlights.push({
+                frameNumber: index + 1,
+                type: type as 'default' | 'scribble' | 'circle',
+              });
+            }
           }
         });
       });

@@ -68,11 +68,10 @@ export const NegativeStrip = ({
     }
 
     // Toggle this highlight type
-    const hasThisHighlight = frame.highlights.includes(highlightType);
-    const newHighlights: ('default' | 'scribble' | 'circle' | 'cross')[] =
-      hasThisHighlight
-        ? frame.highlights.filter((h: string) => h !== highlightType)
-        : [...frame.highlights, highlightType];
+    const newHighlights = {
+      ...frame.highlights,
+      [highlightType]: !frame.highlights[highlightType],
+    };
 
     onFrameUpdate(frameId, { ...frame, highlights: newHighlights });
   };
@@ -192,8 +191,9 @@ export const NegativeStrip = ({
             />
 
             {/* Highlight overlays */}
-            {frame.highlights.map(
-              (highlight: string, highlightIndex: number) => (
+            {Object.entries(frame.highlights)
+              .filter(([type, isActive]) => isActive)
+              .map(([highlight], highlightIndex) => (
                 <div
                   key={`${frameId}-${highlight}-${highlightIndex}`}
                   className="absolute inset-0 pointer-events-none"
@@ -206,8 +206,7 @@ export const NegativeStrip = ({
                     opacity: highlight === 'scribble' ? 1 : 0.9,
                   }}
                 />
-              )
-            )}
+              ))}
           </div>
         );
       })}
