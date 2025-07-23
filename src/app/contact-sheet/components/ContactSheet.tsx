@@ -60,7 +60,7 @@ export const ContactSheet = ({
 
         // Calculate strip rotation for authentic look
         const seed = i * 123.456;
-        const stripRotation = Math.sin(seed) * 0.25;
+        const stripRotation = Math.sin(seed) * 0.5;
 
         return (
           <NegativeStrip
