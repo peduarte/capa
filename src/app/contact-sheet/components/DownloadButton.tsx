@@ -14,6 +14,7 @@ interface DownloadButtonProps {
   filmStock: FilmStock;
   rotation?: number;
   className?: string;
+  onDownloadStateChange?: (isDownloading: boolean) => void;
 }
 
 export const DownloadButton = ({
@@ -23,14 +24,21 @@ export const DownloadButton = ({
   filmStock,
   rotation = 0,
   className = '',
+  onDownloadStateChange,
 }: DownloadButtonProps) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Helper function to update downloading state and notify parent
+  const updateDownloadingState = (downloading: boolean) => {
+    setIsDownloading(downloading);
+    onDownloadStateChange?.(downloading);
+  };
+
   const handleDownload = async () => {
     if (!images.length || isDownloading) return;
 
-    setIsDownloading(true);
+    updateDownloadingState(true);
     setError(null);
 
     try {
@@ -109,7 +117,7 @@ export const DownloadButton = ({
 
       setError(errorMessage);
     } finally {
-      setIsDownloading(false);
+      updateDownloadingState(false);
     }
   };
 

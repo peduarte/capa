@@ -34,6 +34,7 @@ function ContactSheetPageContent() {
   const [showDemo, setShowDemo] = useState(false); // Start with empty frames
   const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [highlights, setHighlights] = useState<FrameHighlight[]>([]);
   const [xMarks, setXMarks] = useState<number[]>([]);
   const [selectedFilmStock, setSelectedFilmStock] =
@@ -498,6 +499,7 @@ function ContactSheetPageContent() {
                 xMarks={xMarks}
                 filmStock={selectedFilmStock}
                 rotation={rotation}
+                onDownloadStateChange={setIsDownloading}
               />
             )}
           </div>
@@ -636,6 +638,19 @@ function ContactSheetPageContent() {
               <div className="text-center">
                 <h3 className="text-l font-semibold ">
                   Creating your contact sheet...
+                </h3>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Download Overlay */}
+        {isDownloading && (
+          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+            <div className="py-8 px-12 border-1 border-dashed border-white/50">
+              <div className="text-center">
+                <h3 className="text-l font-semibold ">
+                  Generating your download...
                 </h3>
               </div>
             </div>
