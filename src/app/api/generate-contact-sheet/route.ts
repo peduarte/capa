@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       defaultViewport: {
         width: 1920,
         height: 1080,
-        deviceScaleFactor: 1,
+        deviceScaleFactor: 2,
         isMobile: false,
         isLandscape: true,
       },
