@@ -105,23 +105,33 @@ function ContactSheetPageContent() {
       const key = event.key.toLowerCase();
       switch (key) {
         case 'c':
-          setSelectedHighlightType('circle');
+          setSelectedHighlightType(current =>
+            current === 'circle' ? '' : 'circle'
+          );
           break;
         case 's':
-          setSelectedHighlightType('scribble');
+          setSelectedHighlightType(current =>
+            current === 'scribble' ? '' : 'scribble'
+          );
           break;
         case 'x':
-          setSelectedHighlightType('x');
+          setSelectedHighlightType(current => (current === 'x' ? '' : 'x'));
           break;
         case 'r':
-          setSelectedHighlightType('rectangle');
+          setSelectedHighlightType(current =>
+            current === 'rectangle' ? '' : 'rectangle'
+          );
           break;
         case 'd':
-          setSelectedHighlightType('delete');
+          setSelectedHighlightType(current =>
+            current === 'delete' ? '' : 'delete'
+          );
           break;
         case 'l':
           if (!isTouchDevice) {
-            setSelectedHighlightType('loupe');
+            setSelectedHighlightType(current =>
+              current === 'loupe' ? '' : 'loupe'
+            );
           }
           break;
         default:
