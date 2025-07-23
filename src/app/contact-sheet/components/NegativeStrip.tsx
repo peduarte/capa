@@ -173,7 +173,7 @@ export const NegativeStrip = ({
                 left: 0,
                 width: '188px',
                 height: '11px',
-                backgroundImage: `url(${FILM_STOCKS[filmStock].titleImage})`,
+                backgroundImage: `url(/${FILM_STOCKS[filmStock].id}/title.png)`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
@@ -185,58 +185,33 @@ export const NegativeStrip = ({
             <div
               className="absolute pointer-events-none"
               style={{
-                bottom: '2px',
+                bottom: '0px',
                 left: 0,
                 width: '188px',
                 height: '11px',
-                backgroundImage: `url(${FILM_STOCKS[filmStock].footerImage})`,
+                backgroundImage: `url(/${FILM_STOCKS[filmStock].id}/dx.png)`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
                 zIndex: 10,
-                mixBlendMode: 'color-dodge',
               }}
             />
 
-            {/* Frame index number */}
+            {/* Frame index overlay */}
             <div
               className="absolute pointer-events-none"
               style={{
-                ...FILM_STOCKS[filmStock].smallIndex,
-                fontSize: '10px',
-                lineHeight: '1',
-                fontFamily: 'Courier, monospace',
-                color: FILM_STOCKS[filmStock].color,
-                zIndex: 15,
-                textAlign: 'center',
-                width: '24px',
-                fontWeight: 'bold',
-                opacity: '0.9',
+                bottom: '0px',
+                left: 0,
+                width: '188px',
+                height: '11px',
+                backgroundImage: `url(/${FILM_STOCKS[filmStock].id}/index-${frameNumber}.png)`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                zIndex: 11,
               }}
-            >
-              ▸{frameNumber}
-              <span style={{ fontSize: '8px' }}>A</span>
-            </div>
-
-            {/* Frame index number */}
-            <div
-              className="absolute pointer-events-none"
-              style={{
-                ...FILM_STOCKS[filmStock].largeIndex,
-                textAlign: FILM_STOCKS[filmStock].largeIndex.right
-                  ? 'right'
-                  : 'left',
-                fontSize: '13px',
-                lineHeight: '1',
-                fontFamily: 'Courier, monospace',
-                color: FILM_STOCKS[filmStock].color,
-                zIndex: 15,
-                fontWeight: 'bold',
-                opacity: '0.9',
-              }}
-            >
-              {frameNumber}
-            </div>
+            />
 
             {/* Multiple highlight overlays */}
             {frameHighlights.map((highlight, highlightIndex) => (
