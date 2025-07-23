@@ -205,7 +205,7 @@ function ContactSheetContent({
                   />
                   {/* Film stock title overlay */}
                   <img
-                    src={`${baseUrl}${FILM_STOCKS[filmStock].titleImage}`}
+                    src={`${baseUrl}/${FILM_STOCKS[filmStock].id}/title.png`}
                     style={{
                       position: 'absolute',
                       top: 0,
@@ -219,7 +219,7 @@ function ContactSheetContent({
 
                   {/* Film stock footer overlay */}
                   <img
-                    src={`${baseUrl}${FILM_STOCKS[filmStock].footerImage}`}
+                    src={`${baseUrl}/${FILM_STOCKS[filmStock].id}/dx.png`}
                     style={{
                       position: 'absolute',
                       bottom: 2 * scaleFactor,
@@ -227,6 +227,20 @@ function ContactSheetContent({
                       width: 188 * scaleFactor,
                       height: 11 * scaleFactor,
                       zIndex: 10,
+                      objectFit: 'cover',
+                    }}
+                  />
+
+                  {/* Frame index overlay */}
+                  <img
+                    src={`${baseUrl}/${FILM_STOCKS[filmStock].id}/index-${frameNumber}.png`}
+                    style={{
+                      position: 'absolute',
+                      bottom: 2 * scaleFactor,
+                      left: 0,
+                      width: 188 * scaleFactor,
+                      height: 11 * scaleFactor,
+                      zIndex: 11,
                       objectFit: 'cover',
                     }}
                   />
@@ -259,64 +273,6 @@ function ContactSheetContent({
                       />
                     </div>
                   )}
-
-                  {/* Small frame number */}
-                  <div
-                    style={{
-                      position: 'absolute',
-                      ...(FILM_STOCKS[filmStock].smallIndex.bottom && {
-                        bottom: FILM_STOCKS[filmStock].smallIndex.bottom,
-                      }),
-                      ...(FILM_STOCKS[filmStock].smallIndex.left && {
-                        left: FILM_STOCKS[filmStock].smallIndex.left,
-                      }),
-                      ...(FILM_STOCKS[filmStock].smallIndex.right && {
-                        right: FILM_STOCKS[filmStock].smallIndex.right,
-                      }),
-                      fontSize: 9 * scaleFactor,
-                      lineHeight: 1,
-                      fontFamily: 'Courier, monospace',
-                      color: FILM_STOCKS[filmStock].color,
-                      zIndex: 15,
-                      textAlign: FILM_STOCKS[filmStock].smallIndex.right
-                        ? 'right'
-                        : 'left',
-                      fontWeight: 'bold',
-                      opacity: 0.9,
-                      display: 'flex',
-                    }}
-                  >
-                    {frameNumber}
-                  </div>
-
-                  {/* Large frame number */}
-                  <div
-                    style={{
-                      position: 'absolute',
-                      ...(FILM_STOCKS[filmStock].largeIndex.bottom && {
-                        bottom: FILM_STOCKS[filmStock].largeIndex.bottom,
-                      }),
-                      ...(FILM_STOCKS[filmStock].largeIndex.left && {
-                        left: FILM_STOCKS[filmStock].largeIndex.left,
-                      }),
-                      ...(FILM_STOCKS[filmStock].largeIndex.right && {
-                        right: FILM_STOCKS[filmStock].largeIndex.right,
-                      }),
-                      fontSize: 13 * scaleFactor,
-                      lineHeight: 1,
-                      fontFamily: 'Courier, monospace',
-                      color: FILM_STOCKS[filmStock].color,
-                      zIndex: 15,
-                      textAlign: FILM_STOCKS[filmStock].largeIndex.right
-                        ? 'right'
-                        : 'left',
-                      fontWeight: 'bold',
-                      opacity: 0.9,
-                      display: 'flex',
-                    }}
-                  >
-                    {frameNumber}
-                  </div>
 
                   {/* Highlight overlay */}
                   {isHighlighted && (
