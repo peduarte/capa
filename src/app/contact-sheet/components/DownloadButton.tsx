@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import download from '../utils/download';
 import { FilmStock, FILM_STOCKS } from '../utils/constants';
 
@@ -35,11 +35,22 @@ export const DownloadButton = ({
     onDownloadStateChange?.(downloading);
   };
 
+  // Auto-dismiss error after 8 seconds
+  useEffect(() => {
+    if (error) {
+      const timeout = setTimeout(() => {
+        setError(null);
+      }, 8000);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [error]);
+
   const handleDownload = async () => {
     if (!images.length || isDownloading) return;
 
     updateDownloadingState(true);
-    setError(null);
+    setError(null); // Clear any previous errors
 
     try {
       // Generate filename with film name
@@ -120,6 +131,12 @@ export const DownloadButton = ({
     }
   };
 
+  // Handle manual dismissal of error
+  const dismissError = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setError(null);
+  };
+
   return (
     <div className="relative">
       <button
@@ -132,10 +149,17 @@ export const DownloadButton = ({
 
       {/* Error tooltip */}
       {error && (
-        <div className="absolute bottom-full right-0 mb-2 p-3 bg-red-600 text-white text-sm rounded shadow-lg max-w-xs z-50">
+        <div
+          className="absolute bottom-full right-0 mb-2 p-3 bg-red-600 text-white text-sm rounded shadow-lg max-w-xs z-50 cursor-pointer"
+          onClick={dismissError}
+          title="Click to dismiss"
+        >
           <div className="font-medium">{error}</div>
           <div className="text-xs mt-1 opacity-90">
             Try refreshing the page or re-uploading your images
+          </div>
+          <div className="text-xs mt-1 opacity-75">
+            (Auto-dismisses in 8 seconds)
           </div>
           <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-red-600" />
         </div>
