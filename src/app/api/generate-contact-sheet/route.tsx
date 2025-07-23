@@ -138,7 +138,6 @@ function ContactSheetContent({
         background: 'black',
         width: baseWidth,
         height: baseHeight,
-        padding: 16 * scaleFactor,
         transform: `rotate(${rotation}deg)`,
         transformOrigin: 'center center',
         display: 'flex',
@@ -335,13 +334,12 @@ function getContactSheetDimensions(
   const baseWidth = maxStripWidth;
   const baseHeight = numberOfStrips * FRAME_HEIGHT + (numberOfStrips - 1) * 16;
 
-  // Add padding for proper spacing
-  const horizontalPadding = 32; // 16px padding * 2 sides
-  const verticalPadding = 48; // More space top/bottom for better balance
-  const buffer = 20; // Extra buffer for safety
+  // Add balanced padding on all sides - reduced since outer container will center
+  const padding = 120; // 60px padding on each side for better balance
+  const buffer = 0; // Remove extra buffer since we're being more precise
 
-  const contentWidth = baseWidth + horizontalPadding + buffer;
-  const contentHeight = baseHeight + verticalPadding + buffer;
+  const contentWidth = baseWidth + padding;
+  const contentHeight = baseHeight + padding;
 
   if (rotation === 0) {
     return {
@@ -359,7 +357,7 @@ function getContactSheetDimensions(
   const rotatedHeight = contentWidth * sin + contentHeight * cos;
 
   return {
-    width: Math.ceil(rotatedWidth) + buffer,
-    height: Math.ceil(rotatedHeight) + buffer,
+    width: Math.ceil(rotatedWidth),
+    height: Math.ceil(rotatedHeight),
   };
 }
