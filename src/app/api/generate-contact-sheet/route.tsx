@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     console.log('Base URL:', baseUrl);
 
     // Calculate dimensions with high DPI scaling
-    const scaleFactor = 2; // Equivalent to deviceScaleFactor: 2 in Puppeteer
+    const scaleFactor = 2; // 2x scaling for high resolution output
     const baseDimensions = getContactSheetDimensions(images.length, rotation);
     const dimensions = {
       width: baseDimensions.width * scaleFactor,

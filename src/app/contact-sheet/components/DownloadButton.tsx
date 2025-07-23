@@ -71,7 +71,7 @@ export const DownloadButton = ({
         })
       );
 
-      // Call the Puppeteer API
+      // Call the contact sheet generation API
       const response = await fetch('/api/generate-contact-sheet', {
         method: 'POST',
         headers: {
