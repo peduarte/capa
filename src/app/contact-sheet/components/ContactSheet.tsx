@@ -18,6 +18,7 @@ interface ContactSheetProps {
   ref: React.RefObject<HTMLDivElement | null>;
   onMouseMove?: (event: React.MouseEvent) => void;
   onMouseLeave?: () => void;
+  onImageDelete?: (frameNumber: number) => void;
 }
 
 export const ContactSheet = ({
@@ -31,6 +32,7 @@ export const ContactSheet = ({
   ref,
   onMouseMove,
   onMouseLeave,
+  onImageDelete,
 }: ContactSheetProps) => {
   const numberOfStrips = Math.ceil(images.length / 6);
   const maxFramesPerStrip = Math.min(6, images.length);
@@ -65,6 +67,7 @@ export const ContactSheet = ({
           onXMarksChange={onXMarksChange}
           filmStock={filmStock}
           selectedHighlightType={selectedHighlightType}
+          onImageDelete={onImageDelete}
         />
       ))}
     </div>

@@ -16,6 +16,7 @@ interface NegativeStripProps {
   onXMarksChange: (xMarks: number[]) => void;
   filmStock: FilmStock;
   selectedHighlightType: string;
+  onImageDelete?: (frameNumber: number) => void;
 }
 
 export const NegativeStrip = ({
@@ -27,6 +28,7 @@ export const NegativeStrip = ({
   onXMarksChange,
   filmStock,
   selectedHighlightType,
+  onImageDelete,
 }: NegativeStripProps) => {
   const framesInStrip = Math.min(6, images.length - startIndex);
   const stripIndex = Math.floor(startIndex / 6);
@@ -37,6 +39,14 @@ export const NegativeStrip = ({
   const handleFrameClick = (frameNumber: number) => {
     // Do nothing if no highlight type is selected or if loupe is selected
     if (!selectedHighlightType || selectedHighlightType === 'loupe') {
+      return;
+    }
+
+    if (selectedHighlightType === 'delete') {
+      // Handle image deletion
+      if (onImageDelete) {
+        onImageDelete(frameNumber);
+      }
       return;
     }
 
@@ -115,7 +125,7 @@ export const NegativeStrip = ({
         return (
           <div
             key={index}
-            className="relative cursor-pointer flex items-center justify-center"
+            className="relative cursor-inherit flex items-center justify-center"
             style={{
               width: `${MEASUREMENTS.frameWidth}px`,
               height: `${MEASUREMENTS.frameHeight}px`,

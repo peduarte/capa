@@ -46,6 +46,12 @@ export const HighlightTypeSelector = ({
         >
           Cross
         </ToggleGroup.Item>
+        <ToggleGroup.Item
+          value="delete"
+          className="px-2 py-1 text-xs text-white focus:outline-none data-[state=on]:bg-red-500 data-[state=on]:text-white rounded"
+        >
+          Delete
+        </ToggleGroup.Item>
         {!hideLoupeOption && (
           <ToggleGroup.Item
             value="loupe"

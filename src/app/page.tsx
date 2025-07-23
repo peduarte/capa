@@ -75,6 +75,13 @@ function ContactSheetPageContent() {
     checkTouchDevice();
   }, [selectedHighlightType]);
 
+  // Hide loupe when switching away from loupe mode
+  useEffect(() => {
+    if (selectedHighlightType !== 'loupe') {
+      setLoupeVisible(false);
+    }
+  }, [selectedHighlightType]);
+
   // Keyboard shortcuts for highlight type selection
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -105,6 +112,9 @@ function ContactSheetPageContent() {
           break;
         case 'r':
           setSelectedHighlightType('rectangle');
+          break;
+        case 'd':
+          setSelectedHighlightType('delete');
           break;
         case 'l':
           if (!isTouchDevice) {
@@ -365,6 +375,61 @@ function ContactSheetPageContent() {
     };
   }, []); // Empty dependency array - only cleanup on unmount
 
+  // Handle image deletion
+  const handleImageDelete = useCallback(
+    (frameNumber: number) => {
+      const imageIndex = frameNumber - 1;
+      if (imageIndex < 0 || imageIndex >= currentImages.length) return;
+
+      if (showDemo && uploadedImages.length === 0) {
+        // Convert demo to uploaded images first, then delete
+        const updatedImages = demoImageList.filter(
+          (_, index) => index !== imageIndex
+        );
+
+        setUploadedImages(updatedImages);
+        uploadedImagesRef.current = updatedImages;
+        setShowDemo(false);
+      } else {
+        // Deleting from uploaded images (including converted demo images)
+        if (imageIndex >= uploadedImages.length) return;
+
+        // Remove the image from uploadedImages array
+        const updatedImages = uploadedImages.filter(
+          (_, index) => index !== imageIndex
+        );
+
+        // Revoke the object URL to prevent memory leaks (only for blob URLs)
+        if (
+          uploadedImages[imageIndex] &&
+          uploadedImages[imageIndex].startsWith('blob:')
+        ) {
+          URL.revokeObjectURL(uploadedImages[imageIndex]);
+        }
+
+        setUploadedImages(updatedImages);
+        uploadedImagesRef.current = updatedImages;
+      }
+
+      // Update highlights and X marks - adjust frame numbers for remaining frames
+      const updatedHighlights = highlights
+        .filter(h => h.frameNumber !== frameNumber)
+        .map(h =>
+          h.frameNumber > frameNumber
+            ? { ...h, frameNumber: h.frameNumber - 1 }
+            : h
+        );
+
+      const updatedXMarks = xMarks
+        .filter(x => x !== frameNumber)
+        .map(x => (x > frameNumber ? x - 1 : x));
+
+      setHighlights(updatedHighlights);
+      setXMarks(updatedXMarks);
+    },
+    [uploadedImages, highlights, xMarks, currentImages, showDemo, demoImageList]
+  );
+
   return (
     <div className="min-h-screen relative">
       {/* Sticky Top Navigation Bar*/}
@@ -533,7 +598,9 @@ function ContactSheetPageContent() {
             cursor:
               selectedHighlightType === 'loupe' && !isTouchDevice
                 ? `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='${loupeSize}' height='${loupeSize}' viewBox='0 0 ${loupeSize} ${loupeSize}'%3E%3Ccircle cx='${loupeSize / 2}' cy='${loupeSize / 2}' r='${loupeSize / 2 - 2}' fill='none' stroke='%23ffffff' stroke-width='2' opacity='0.8'/%3E%3C/svg%3E") ${loupeSize / 2} ${loupeSize / 2}, auto`
-                : 'default',
+                : selectedHighlightType === 'delete'
+                  ? 'crosshair'
+                  : 'default',
           }}
         >
           <ContactSheet
@@ -547,6 +614,7 @@ function ContactSheetPageContent() {
             selectedHighlightType={selectedHighlightType}
             onMouseMove={handleContactSheetMouseMove}
             onMouseLeave={handleContactSheetMouseLeave}
+            onImageDelete={handleImageDelete}
           />
         </div>
 
@@ -596,6 +664,7 @@ function ContactSheetPageContent() {
                 onXMarksChange={() => {}} // No-op for loupe
                 filmStock={selectedFilmStock}
                 selectedHighlightType="" // Disable interactions in loupe
+                onImageDelete={() => {}} // No-op for loupe
               />
             </div>
           </div>
