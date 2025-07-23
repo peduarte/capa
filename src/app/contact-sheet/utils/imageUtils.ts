@@ -19,6 +19,23 @@ export const COMPRESSION_MAX_WIDTH = 540; // Max width for compressed images (3x
 export const COMPRESSION_MAX_HEIGHT = 360; // Max height for compressed images (3x display size)
 export const COMPRESSION_QUALITY = 0.9; // JPEG quality (0.0 - 1.0) - slightly lower for smaller files
 
+// iOS-specific compression settings to handle data URL size limitations
+export const IOS_COMPRESSION_MAX_WIDTH = 360; // Smaller for iOS Safari data URL limits
+export const IOS_COMPRESSION_MAX_HEIGHT = 240; // Smaller for iOS Safari data URL limits
+export const IOS_COMPRESSION_QUALITY = 0.7; // More aggressive compression for iOS
+
+// Detect iOS Safari
+export const isIOSSafari = (): boolean => {
+  if (typeof window === 'undefined') return false;
+
+  const userAgent = window.navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+  const isSafari =
+    /Safari/.test(userAgent) && !/Chrome|CriOS|FxiOS/.test(userAgent);
+
+  return isIOS && isSafari;
+};
+
 export const validateImageFile = (
   file: File
 ): Pick<ImageValidationResult, 'valid' | 'error'> => {
@@ -117,10 +134,18 @@ export const revokeObjectUrls = (urls: string[]) => {
 // Image compression function with portrait rotation
 export const compressImage = (
   file: File,
-  maxWidth: number = COMPRESSION_MAX_WIDTH,
-  maxHeight: number = COMPRESSION_MAX_HEIGHT,
-  quality: number = COMPRESSION_QUALITY
+  maxWidth?: number,
+  maxHeight?: number,
+  quality?: number
 ): Promise<Blob> => {
+  // Use iOS-specific settings if on iOS Safari, otherwise use defaults
+  const isIOS = isIOSSafari();
+  const finalMaxWidth =
+    maxWidth ?? (isIOS ? IOS_COMPRESSION_MAX_WIDTH : COMPRESSION_MAX_WIDTH);
+  const finalMaxHeight =
+    maxHeight ?? (isIOS ? IOS_COMPRESSION_MAX_HEIGHT : COMPRESSION_MAX_HEIGHT);
+  const finalQuality =
+    quality ?? (isIOS ? IOS_COMPRESSION_QUALITY : COMPRESSION_QUALITY);
   return new Promise((resolve, reject) => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -144,21 +169,21 @@ export const compressImage = (
       const aspectRatio = width / height;
 
       // Resize if image is larger than max dimensions
-      if (width > maxWidth || height > maxHeight) {
+      if (width > finalMaxWidth || height > finalMaxHeight) {
         if (aspectRatio > 1) {
           // Landscape (or rotated portrait)
-          width = maxWidth;
+          width = finalMaxWidth;
           height = width / aspectRatio;
-          if (height > maxHeight) {
-            height = maxHeight;
+          if (height > finalMaxHeight) {
+            height = finalMaxHeight;
             width = height * aspectRatio;
           }
         } else {
           // Square
-          height = maxHeight;
+          height = finalMaxHeight;
           width = height * aspectRatio;
-          if (width > maxWidth) {
-            width = maxWidth;
+          if (width > finalMaxWidth) {
+            width = finalMaxWidth;
             height = width / aspectRatio;
           }
         }
@@ -188,7 +213,7 @@ export const compressImage = (
           }
         },
         'image/jpeg', // Always use JPEG for smaller file sizes
-        quality
+        finalQuality
       );
     };
 

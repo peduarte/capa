@@ -61,15 +61,51 @@ export const DownloadButton = ({
 
       // Convert blob URLs to data URLs if needed for server processing
       const processedImages = await Promise.all(
-        images.map(async imagePath => {
+        images.map(async (imagePath, index) => {
           if (imagePath.startsWith('blob:')) {
             try {
               const response = await fetch(imagePath);
               const blob = await response.blob();
+
+              // Check blob size - if too large, might cause issues on iOS
+              const MAX_BLOB_SIZE = 2 * 1024 * 1024; // 2MB limit for safety
+              if (blob.size > MAX_BLOB_SIZE) {
+                console.warn(
+                  `Image ${index + 1} is very large (${blob.size} bytes), may cause issues on iOS`
+                );
+              }
+
+              // Log blob size for debugging
+              console.log(`Image ${index + 1} blob size: ${blob.size} bytes`);
+
               return new Promise<string>((resolve, reject) => {
                 const reader = new FileReader();
-                reader.onload = () => resolve(reader.result as string);
-                reader.onerror = reject;
+                reader.onload = () => {
+                  const dataUrl = reader.result as string;
+                  // Log data URL size for debugging
+                  console.log(
+                    `Image ${index + 1} data URL size: ${dataUrl.length} chars`
+                  );
+
+                  // Additional size check for data URL (base64 is ~33% larger than binary)
+                  const MAX_DATA_URL_SIZE = 3 * 1024 * 1024; // 3MB limit for data URLs
+                  if (dataUrl.length > MAX_DATA_URL_SIZE) {
+                    reject(
+                      new Error(
+                        `Image ${index + 1} data URL too large for iOS Safari`
+                      )
+                    );
+                    return;
+                  }
+
+                  resolve(dataUrl);
+                };
+                reader.onerror = () => {
+                  console.error(
+                    `Failed to convert image ${index + 1} to data URL`
+                  );
+                  reject(new Error(`Failed to convert image ${index + 1}`));
+                };
                 reader.readAsDataURL(blob);
               });
             } catch (error) {
@@ -120,6 +156,12 @@ export const DownloadButton = ({
             'Image loading blocked. Try refreshing and uploading images again.';
         } else if (err.message.includes('Server error')) {
           errorMessage = 'Server error generating image. Please try again.';
+        } else if (err.message.includes('Failed to convert image')) {
+          // Detect iOS for specific guidance
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+          errorMessage = isIOS
+            ? 'Images too large for iOS Safari. Try uploading smaller or fewer images.'
+            : 'Failed to process images. Try uploading smaller files.';
         } else {
           errorMessage = err.message || 'Unknown error occurred';
         }
