@@ -16,7 +16,6 @@ import {
 import {
   FilmStock,
   FILM_STOCKS,
-  DEFAULT_FILM_STOCK,
   MEASUREMENTS,
   Frame,
   ContactSheetState,
@@ -42,7 +41,7 @@ function ContactSheetPageContent() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [selectedFilmStock, setSelectedFilmStock] =
-    useState<FilmStock>(DEFAULT_FILM_STOCK);
+    useState<FilmStock>('ilford-hp5');
   const [selectedHighlightType, setSelectedHighlightType] =
     useState<string>('rectangle');
   const [rotation, setRotation] = useState<number>(0); // 0, 90, 180, 270 degrees

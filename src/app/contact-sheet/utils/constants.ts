@@ -36,8 +36,6 @@ export const FILM_STOCKS: Record<FilmStock, FilmStockConfig> = {
   },
 };
 
-export const DEFAULT_FILM_STOCK: FilmStock = 'ilford-hp5';
-
 // New object-based state management types
 export interface Frame {
   src: string;

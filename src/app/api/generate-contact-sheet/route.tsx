@@ -4,7 +4,6 @@ import {
   MEASUREMENTS,
   FilmStock,
   FILM_STOCKS,
-  DEFAULT_FILM_STOCK,
 } from '../../contact-sheet/utils/constants';
 
 // Types for the request payload
@@ -61,7 +60,7 @@ export async function POST(request: NextRequest) {
       const {
         frames,
         frameOrder,
-        filmStock: fs = DEFAULT_FILM_STOCK,
+        filmStock: fs = 'ilford-hp5',
         rotation: rot = 0,
       } = body;
 
@@ -97,7 +96,7 @@ export async function POST(request: NextRequest) {
       images = legacyBody.images;
       highlights = legacyBody.highlights || [];
       xMarks = legacyBody.xMarks || [];
-      filmStock = legacyBody.filmStock || DEFAULT_FILM_STOCK;
+      filmStock = legacyBody.filmStock || 'ilford-hp5';
       rotation = legacyBody.rotation || 0;
     }
 
