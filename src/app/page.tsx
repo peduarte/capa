@@ -19,7 +19,6 @@ import {
   MEASUREMENTS,
   Frame,
   ContactSheetState,
-  FrameHighlight,
 } from './contact-sheet/utils/constants';
 import { defaultFrameData } from './contact-sheet/utils/defaultFrameData';
 
@@ -199,35 +198,6 @@ function ContactSheetPageContent() {
 
   // Use uploaded images if available, otherwise demo images if enabled, otherwise empty frames
   const currentImages = getCurrentImages();
-
-  // Helper functions to convert state to legacy format for DownloadButton
-  const getCurrentHighlights = (): FrameHighlight[] => {
-    const highlights: FrameHighlight[] = [];
-    contactSheetState.frameOrder.forEach((frameId, index) => {
-      const frame = contactSheetState.frames[frameId];
-      // Check each highlight type and add active ones (excluding cross)
-      Object.entries(frame.highlights).forEach(([type, isActive]) => {
-        if (isActive && type !== 'cross') {
-          highlights.push({
-            frameNumber: index + 1,
-            type: type as 'default' | 'scribble' | 'circle',
-          });
-        }
-      });
-    });
-    return highlights;
-  };
-
-  const getCurrentXMarks = (): number[] => {
-    const xMarks: number[] = [];
-    contactSheetState.frameOrder.forEach((frameId, index) => {
-      const frame = contactSheetState.frames[frameId];
-      if (frame.highlights.cross) {
-        xMarks.push(index + 1);
-      }
-    });
-    return xMarks;
-  };
 
   // Rotate contact sheet left (counter-clockwise)
   const rotateContactSheetLeft = useCallback(() => {
@@ -527,9 +497,10 @@ function ContactSheetPageContent() {
 
             {(contactSheetState.frameOrder.length > 0 || showDemo) && (
               <DownloadButton
-                images={currentImages}
-                highlights={getCurrentHighlights()}
-                xMarks={getCurrentXMarks()}
+                frames={showDemo ? demoData.frames : contactSheetState.frames}
+                frameOrder={
+                  showDemo ? demoData.frameOrder : contactSheetState.frameOrder
+                }
                 filmStock={selectedFilmStock}
                 rotation={rotation}
                 onDownloadStateChange={setIsDownloading}

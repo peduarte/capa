@@ -7,22 +7,6 @@ import {
 } from '../../contact-sheet/utils/constants';
 
 // Types for the request payload
-
-// Legacy format (for backward compatibility)
-interface FrameHighlight {
-  frameNumber: number;
-  type: 'default' | 'scribble' | 'circle';
-}
-
-interface ContactSheetRequestLegacy {
-  images: string[];
-  highlights?: FrameHighlight[];
-  xMarks?: number[];
-  filmStock?: FilmStock;
-  rotation?: number;
-}
-
-// New object-based format
 interface Frame {
   src: string;
   highlights: {
@@ -33,86 +17,53 @@ interface Frame {
   };
 }
 
-interface ContactSheetRequestNew {
+interface ContactSheetRequest {
   frames: Record<string, Frame>;
   frameOrder: string[];
   filmStock?: FilmStock;
   rotation?: number;
 }
 
-type ContactSheetRequest = ContactSheetRequestLegacy | ContactSheetRequestNew;
-
 export async function POST(request: NextRequest) {
   try {
     console.log('API route called');
-    const body: ContactSheetRequest = await request.json();
+    const body = await request.json();
 
-    // Detect which format is being used and normalize to legacy format for processing
-    let images: string[];
-    let highlights: FrameHighlight[];
-    let xMarks: number[];
-    let filmStock: FilmStock;
-    let rotation: number;
+    console.log('Request body:', JSON.stringify(body, null, 2));
 
-    if ('frames' in body && 'frameOrder' in body) {
-      // New object-based format
-      console.log('Using new object-based format');
-      const {
-        frames,
-        frameOrder,
-        filmStock: fs = 'ilford-hp5',
-        rotation: rot = 0,
-      } = body;
-
-      images = frameOrder.map(id => frames[id].src);
-      highlights = [];
-      xMarks = [];
-
-      // Convert frames to legacy format
-      frameOrder.forEach((id, index) => {
-        const frame = frames[id];
-
-        // Check each highlight type and convert to legacy format
-        Object.entries(frame.highlights).forEach(([type, isActive]) => {
-          if (isActive) {
-            if (type === 'cross') {
-              xMarks.push(index + 1);
-            } else {
-              highlights.push({
-                frameNumber: index + 1,
-                type: type as 'default' | 'scribble' | 'circle',
-              });
-            }
-          }
-        });
-      });
-
-      filmStock = fs;
-      rotation = rot;
-    } else {
-      // Legacy array-based format
-      console.log('Using legacy array-based format');
-      const legacyBody = body as ContactSheetRequestLegacy;
-      images = legacyBody.images;
-      highlights = legacyBody.highlights || [];
-      xMarks = legacyBody.xMarks || [];
-      filmStock = legacyBody.filmStock || 'ilford-hp5';
-      rotation = legacyBody.rotation || 0;
+    // Validate the request body structure
+    if (!body.frames || !body.frameOrder) {
+      return new Response(
+        JSON.stringify({
+          error:
+            'Invalid request format. Expected object with "frames" and "frameOrder" properties.',
+          received: body,
+        }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
 
+    const {
+      frames,
+      frameOrder,
+      filmStock = 'ilford-hp5',
+      rotation = 0,
+    } = body as ContactSheetRequest;
+
     console.log(
-      'Received images:',
-      images.length,
-      'highlights:',
-      highlights.length,
-      'xMarks:',
-      xMarks.length,
+      'Received frames:',
+      Object.keys(frames).length,
+      'frameOrder:',
+      frameOrder.length,
       'rotation:',
       rotation
     );
 
-    if (!images || !Array.isArray(images)) {
-      return new Response('Invalid images array', { status: 400 });
+    if (!Array.isArray(frameOrder)) {
+      return new Response('frameOrder must be an array', { status: 400 });
     }
 
     // Get the base URL from the request
@@ -124,7 +75,10 @@ export async function POST(request: NextRequest) {
 
     // Calculate dimensions with high DPI scaling
     const scaleFactor = 2; // 2x scaling for high resolution output
-    const baseDimensions = getContactSheetDimensions(images.length, rotation);
+    const baseDimensions = getContactSheetDimensions(
+      frameOrder.length,
+      rotation
+    );
     const dimensions = {
       width: baseDimensions.width * scaleFactor,
       height: baseDimensions.height * scaleFactor,
@@ -145,9 +99,8 @@ export async function POST(request: NextRequest) {
           }}
         >
           <ContactSheetContent
-            images={images}
-            highlights={highlights}
-            xMarks={xMarks}
+            frames={frames}
+            frameOrder={frameOrder}
             baseUrl={baseUrl}
             filmStock={filmStock}
             rotation={rotation}
@@ -167,17 +120,15 @@ export async function POST(request: NextRequest) {
 }
 
 function ContactSheetContent({
-  images,
-  highlights,
-  xMarks,
+  frames,
+  frameOrder,
   baseUrl,
   filmStock,
   rotation = 0,
   scaleFactor = 1,
 }: {
-  images: string[];
-  highlights: FrameHighlight[];
-  xMarks: number[];
+  frames: Record<string, Frame>;
+  frameOrder: string[];
   baseUrl: string;
   filmStock: FilmStock;
   rotation: number;
@@ -189,8 +140,8 @@ function ContactSheetContent({
   const IMAGE_WIDTH = MEASUREMENTS.imageWidth * scaleFactor;
   const IMAGE_HEIGHT = MEASUREMENTS.imageHeight * scaleFactor;
 
-  const numberOfStrips = Math.ceil(images.length / 6);
-  const maxFramesPerStrip = Math.min(6, images.length);
+  const numberOfStrips = Math.ceil(frameOrder.length / 6);
+  const maxFramesPerStrip = Math.min(6, frameOrder.length);
   const maxStripWidth = maxFramesPerStrip * FRAME_WIDTH;
 
   // Calculate container dimensions
@@ -213,7 +164,7 @@ function ContactSheetContent({
     >
       {Array.from({ length: numberOfStrips }, (_, stripIndex) => {
         const startIndex = stripIndex * 6;
-        const framesInStrip = Math.min(6, images.length - startIndex);
+        const framesInStrip = Math.min(6, frameOrder.length - startIndex);
         const stripWidth = framesInStrip * FRAME_WIDTH;
 
         // Add slight rotation for authenticity
@@ -237,12 +188,16 @@ function ContactSheetContent({
             {/* Generate frames for this strip */}
             {Array.from({ length: framesInStrip }, (_, frameIndex) => {
               const imageIndex = startIndex + frameIndex;
-              const imagePath = images[imageIndex];
+              const frameId = frameOrder[imageIndex];
+              const frame = frames[frameId];
               const frameNumber = imageIndex + 1;
-              const isHighlighted = highlights.find(
-                h => h.frameNumber === frameNumber
-              );
-              const isXMarked = xMarks.includes(frameNumber);
+
+              // Determine highlight type from frame data
+              const highlightType = Object.entries(frame.highlights).find(
+                ([type, isActive]) => isActive && type !== 'cross'
+              )?.[0] as 'default' | 'scribble' | 'circle' | undefined;
+
+              const isXMarked = frame.highlights.cross;
 
               return (
                 <div
@@ -312,7 +267,7 @@ function ContactSheetContent({
                   />
 
                   {/* Image */}
-                  {imagePath && (
+                  {frame.src && (
                     <div
                       style={{
                         position: 'relative',
@@ -324,9 +279,9 @@ function ContactSheetContent({
                     >
                       <img
                         src={
-                          imagePath.startsWith('data:')
-                            ? imagePath
-                            : `${baseUrl}/default-frames/${imagePath}`
+                          frame.src.startsWith('data:')
+                            ? frame.src
+                            : `${baseUrl}/default-frames/${frame.src}`
                         }
                         style={{
                           position: 'absolute',
@@ -341,9 +296,9 @@ function ContactSheetContent({
                   )}
 
                   {/* Highlight overlay */}
-                  {isHighlighted && (
+                  {highlightType && (
                     <img
-                      src={`${baseUrl}${getHighlightImage(isHighlighted.type)}`}
+                      src={`${baseUrl}${getHighlightImage(highlightType)}`}
                       style={{
                         position: 'absolute',
                         left: 0,
@@ -403,7 +358,6 @@ function getContactSheetDimensions(
 
   // Add balanced padding on all sides - reduced since outer container will center
   const padding = 120; // 60px padding on each side for better balance
-  const buffer = 0; // Remove extra buffer since we're being more precise
 
   const contentWidth = baseWidth + padding;
   const contentHeight = baseHeight + padding;

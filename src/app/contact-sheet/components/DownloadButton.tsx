@@ -1,16 +1,10 @@
 import { useState, useEffect } from 'react';
 import download from '../utils/download';
-import {
-  FilmStock,
-  FILM_STOCKS,
-  Frame,
-  FrameHighlight,
-} from '../utils/constants';
+import { FilmStock, FILM_STOCKS, Frame } from '../utils/constants';
 
 interface DownloadButtonProps {
-  images: string[];
-  highlights: FrameHighlight[];
-  xMarks: number[];
+  frames: Record<string, Frame>;
+  frameOrder: string[];
   filmStock: FilmStock;
   rotation?: number;
   className?: string;
@@ -18,9 +12,8 @@ interface DownloadButtonProps {
 }
 
 export const DownloadButton = ({
-  images,
-  highlights,
-  xMarks,
+  frames,
+  frameOrder,
   filmStock,
   rotation = 0,
   className = '',
@@ -47,7 +40,7 @@ export const DownloadButton = ({
   }, [error]);
 
   const handleDownload = async () => {
-    if (!images.length || isDownloading) return;
+    if (!frameOrder.length || isDownloading) return;
 
     updateDownloadingState(true);
     setError(null); // Clear any previous errors
@@ -60,8 +53,12 @@ export const DownloadButton = ({
       const filename = `contact-sheet-${filmName}.png`;
 
       // Convert blob URLs to data URLs if needed for server processing
-      const processedImages = await Promise.all(
-        images.map(async (imagePath, index) => {
+      const processedFrames: Record<string, Frame> = {};
+
+      await Promise.all(
+        frameOrder.map(async (frameId, index) => {
+          const frame = frames[frameId];
+          const imagePath = frame.src;
           if (imagePath.startsWith('blob:')) {
             try {
               const response = await fetch(imagePath);
@@ -98,6 +95,10 @@ export const DownloadButton = ({
                     return;
                   }
 
+                  processedFrames[frameId] = {
+                    ...frame,
+                    src: dataUrl,
+                  };
                   resolve(dataUrl);
                 };
                 reader.onerror = () => {
@@ -110,10 +111,11 @@ export const DownloadButton = ({
               });
             } catch (error) {
               console.warn('Failed to convert blob URL:', imagePath, error);
-              return imagePath; // fallback to original path
+              processedFrames[frameId] = frame; // fallback to original frame
             }
+          } else {
+            processedFrames[frameId] = frame; // Use original frame if not blob URL
           }
-          return imagePath;
         })
       );
 
@@ -124,9 +126,8 @@ export const DownloadButton = ({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          images: processedImages,
-          highlights,
-          xMarks,
+          frames: processedFrames,
+          frameOrder,
           filmStock,
           rotation,
         }),
