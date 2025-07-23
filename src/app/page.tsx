@@ -38,6 +38,7 @@ function ContactSheetPageContent() {
     useState<FilmStock>(DEFAULT_FILM_STOCK);
   const [selectedHighlightType, setSelectedHighlightType] =
     useState<string>('rectangle');
+  const [rotation, setRotation] = useState<number>(0); // 0, 90, 180, 270 degrees
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadedImagesRef = useRef<string[]>([]); // Track images for cleanup
 
@@ -191,6 +192,16 @@ function ContactSheetPageContent() {
         ? demoImageList
         : emptyFrames;
 
+  // Rotate contact sheet left (counter-clockwise)
+  const rotateContactSheetLeft = useCallback(() => {
+    setRotation(prev => (prev - 30 + 360) % 360);
+  }, []);
+
+  // Rotate contact sheet right (clockwise)
+  const rotateContactSheetRight = useCallback(() => {
+    setRotation(prev => (prev + 30) % 360);
+  }, []);
+
   // Clear contact sheet back to empty frames
   const clearContactSheet = useCallback(() => {
     // Clean up existing object URLs
@@ -201,6 +212,7 @@ function ContactSheetPageContent() {
     setErrors([]);
     setHighlights([]);
     setXMarks([]);
+    setRotation(0); // Reset rotation
   }, [uploadedImages]);
 
   // Handle upload button click
@@ -472,6 +484,7 @@ function ContactSheetPageContent() {
               highlights={highlights}
               xMarks={xMarks}
               filmStock={selectedFilmStock}
+              rotation={rotation}
             />
           )}
         </div>
@@ -520,6 +533,44 @@ function ContactSheetPageContent() {
                 </Select.Content>
               </Select.Portal>
             </Select.Root>
+          </div>
+
+          {/* Rotate Buttons */}
+          <div className="flex items-center space-x-1">
+            <button
+              onClick={rotateContactSheetLeft}
+              className="px-2 py-1 text-xs text-white rounded hover:bg-white/20 focus:outline-none flex items-center"
+              title={`Rotate left (currently ${rotation}°)`}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M3 12c0-4.97 4.03-9 9-9s9 4.03 9 9-4.03 9-9 9c-2.12 0-4.07-.74-5.61-1.98" />
+                <path d="M7 16l-4 4 4 4" />
+              </svg>
+            </button>
+            <button
+              onClick={rotateContactSheetRight}
+              className="px-2 py-1 text-xs text-white rounded hover:bg-white/20 focus:outline-none flex items-center"
+              title={`Rotate right (currently ${rotation}°)`}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c2.12 0 4.07.74 5.61 1.98" />
+                <path d="M17 8l4-4-4-4" />
+              </svg>
+            </button>
           </div>
 
           {/* Center-Right: Highlight Type Selector */}
@@ -601,6 +652,7 @@ function ContactSheetPageContent() {
                 : selectedHighlightType === 'delete'
                   ? 'crosshair'
                   : 'default',
+            transform: `rotate(${rotation}deg)`,
           }}
         >
           <ContactSheet

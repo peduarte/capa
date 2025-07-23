@@ -12,6 +12,7 @@ interface DownloadButtonProps {
   highlights: FrameHighlight[];
   xMarks: number[];
   filmStock: FilmStock;
+  rotation?: number;
   className?: string;
 }
 
@@ -20,6 +21,7 @@ export const DownloadButton = ({
   highlights,
   xMarks,
   filmStock,
+  rotation = 0,
   className = '',
 }: DownloadButtonProps) => {
   const [isDownloading, setIsDownloading] = useState(false);
@@ -72,6 +74,7 @@ export const DownloadButton = ({
           highlights,
           xMarks,
           filmStock,
+          rotation,
         }),
       });
 

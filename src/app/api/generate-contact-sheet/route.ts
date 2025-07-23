@@ -18,6 +18,7 @@ interface ContactSheetRequest {
   highlights?: FrameHighlight[];
   xMarks?: number[];
   filmStock?: FilmStock;
+  rotation?: number;
 }
 
 export async function POST(request: NextRequest) {
@@ -29,6 +30,7 @@ export async function POST(request: NextRequest) {
       highlights = [],
       xMarks = [],
       filmStock = DEFAULT_FILM_STOCK,
+      rotation = 0,
     } = body;
 
     console.log(
@@ -37,8 +39,22 @@ export async function POST(request: NextRequest) {
       'highlights:',
       highlights.length,
       'xMarks:',
-      xMarks.length
+      xMarks.length,
+      'rotation:',
+      rotation
     );
+
+    // Debug: Log image types
+    images.forEach((img, index) => {
+      if (img) {
+        const isDataUrl = img.startsWith('data:');
+        const isBlobUrl = img.startsWith('blob:');
+        const isPath = !isDataUrl && !isBlobUrl;
+        console.log(
+          `Image ${index + 1}: ${isDataUrl ? 'Data URL' : isBlobUrl ? 'Blob URL' : 'Path'} (length: ${img.length})`
+        );
+      }
+    });
 
     if (!images || !Array.isArray(images)) {
       return NextResponse.json(
@@ -72,6 +88,10 @@ export async function POST(request: NextRequest) {
             '--disable-gpu',
             '--disable-web-security',
             '--allow-running-insecure-content',
+            '--disable-features=VizDisplayCompositor',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding',
           ],
       defaultViewport: {
         width: 1920,
@@ -103,24 +123,32 @@ export async function POST(request: NextRequest) {
       highlights,
       xMarks,
       baseUrl,
-      filmStock
+      filmStock,
+      rotation
     );
     console.log('HTML generated, length:', html.length);
 
     // Set the page content and wait for images to load
     console.log('Setting page content...');
     await page.setContent(html, {
-      waitUntil: 'domcontentloaded',
+      waitUntil: 'networkidle0',
       timeout: 60000,
     });
 
     console.log('Waiting for images to load...');
     // Wait for all images to be loaded
-    await page.waitForSelector('img', { timeout: 30000 });
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      await page.waitForSelector('img', { timeout: 30000 });
+      console.log('Images found, waiting for loading...');
+
+      // Give extra time for large data URLs to load
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    } catch (error) {
+      console.warn('Image loading timeout, proceeding anyway:', error);
+    }
 
     // Get the dimensions of the contact sheet
-    const dimensions = getContactSheetDimensions(images.length);
+    const dimensions = getContactSheetDimensions(images.length, rotation);
     console.log('Screenshot dimensions:', dimensions);
 
     // Take screenshot of the specific element
@@ -155,7 +183,8 @@ async function generateContactSheetHTML(
   highlights: FrameHighlight[],
   xMarks: number[],
   baseUrl: string,
-  filmStock: FilmStock
+  filmStock: FilmStock,
+  rotation: number = 0
 ): Promise<string> {
   const {
     frameWidth: FRAME_WIDTH,
@@ -224,6 +253,8 @@ async function generateContactSheetHTML(
                   pointer-events: none;
                 "
                 crossorigin="anonymous"
+                onload="console.log('Image loaded:', '${frameNumber}')"
+                onerror="console.error('Image failed to load:', '${frameNumber}', this.src.slice(0, 100))"
               />
             </div>
           `
@@ -361,6 +392,30 @@ async function generateContactSheetHTML(
     `;
   }).join('');
 
+  // Calculate container dimensions for proper centering
+  const baseWidth = maxStripWidth + 32;
+  const baseHeight =
+    FRAME_HEIGHT * numberOfStrips + (numberOfStrips - 1) * 16 + 32;
+
+  // Calculate the container size needed for the screenshot
+  let containerWidth = baseWidth;
+  let containerHeight = baseHeight;
+  const contentTransform = `rotate(${rotation}deg)`;
+
+  if (rotation !== 0) {
+    // Calculate bounding box for any rotation angle
+    const radians = (rotation * Math.PI) / 180;
+    const cos = Math.abs(Math.cos(radians));
+    const sin = Math.abs(Math.sin(radians));
+
+    const rotatedWidth = baseWidth * cos + baseHeight * sin;
+    const rotatedHeight = baseWidth * sin + baseHeight * cos;
+
+    const padding = 50;
+    containerWidth = Math.ceil(rotatedWidth) + padding;
+    containerHeight = Math.ceil(rotatedHeight) + padding;
+  }
+
   return `
     <!DOCTYPE html>
     <html>
@@ -381,12 +436,24 @@ async function generateContactSheetHTML(
         <div style="
           position: relative;
           background: black;
-          width: ${maxStripWidth + 32}px;
-          height: ${FRAME_HEIGHT * numberOfStrips + (numberOfStrips - 1) * 16 + 32}px;
-          min-width: 0;
-          padding: 16px;
+          width: ${containerWidth}px;
+          height: ${containerHeight}px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         ">
-          ${stripsHTML}
+          <div style="
+            position: relative;
+            background: black;
+            width: ${baseWidth}px;
+            height: ${baseHeight}px;
+            min-width: 0;
+            padding: 16px;
+            transform: ${contentTransform};
+            transform-origin: center center;
+          ">
+            ${stripsHTML}
+          </div>
         </div>
       </body>
     </html>
@@ -399,18 +466,42 @@ function getHighlightImage(type: 'default' | 'scribble' | 'circle'): string {
   return '/frame-highlight-rectangle.png';
 }
 
-function getContactSheetDimensions(imageCount: number) {
+function getContactSheetDimensions(imageCount: number, rotation: number = 0) {
   const numberOfStrips = Math.ceil(imageCount / 6);
   const maxFramesPerStrip = Math.min(6, imageCount);
   const maxStripWidth = maxFramesPerStrip * MEASUREMENTS.frameWidth;
 
+  const baseWidth = maxStripWidth + 32;
+  const baseHeight =
+    MEASUREMENTS.frameHeight * numberOfStrips + (numberOfStrips - 1) * 16 + 32;
+
+  // Calculate bounding box for any rotation angle
+  if (rotation === 0) {
+    return {
+      x: 0,
+      y: 0,
+      width: baseWidth,
+      height: baseHeight,
+    };
+  }
+
+  // Convert rotation to radians
+  const radians = (rotation * Math.PI) / 180;
+
+  // Calculate the bounding box of the rotated rectangle
+  const cos = Math.abs(Math.cos(radians));
+  const sin = Math.abs(Math.sin(radians));
+
+  const rotatedWidth = baseWidth * cos + baseHeight * sin;
+  const rotatedHeight = baseWidth * sin + baseHeight * cos;
+
+  // Add padding to ensure no cropping
+  const padding = 50;
+
   return {
     x: 0,
     y: 0,
-    width: maxStripWidth + 32,
-    height:
-      MEASUREMENTS.frameHeight * numberOfStrips +
-      (numberOfStrips - 1) * 16 +
-      32,
+    width: Math.ceil(rotatedWidth) + padding,
+    height: Math.ceil(rotatedHeight) + padding,
   };
 }
