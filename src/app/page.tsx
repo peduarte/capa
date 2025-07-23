@@ -239,12 +239,15 @@ function ContactSheetPageContent() {
     async (files: FileList | File[]) => {
       if (files.length === 0) return;
 
-      // Check total image count (existing + new)
-      const currentFrameCount = contactSheetState.frameOrder.length;
-      const totalImages = currentFrameCount + files.length;
-      if (totalImages > 50) {
+      // When demo is active, uploaded images should replace demo data
+      // When demo is not active, check against existing user-uploaded frames
+      const existingUserFrameCount = showDemo
+        ? 0
+        : contactSheetState.frameOrder.length;
+      const totalImages = existingUserFrameCount + files.length;
+      if (totalImages > 42) {
         setErrors([
-          `Too many images. Maximum is 50 total (you have ${currentFrameCount}, trying to add ${files.length}).`,
+          `Too many images. Maximum is 42 total (you have ${existingUserFrameCount}, trying to add ${files.length}).`,
         ]);
         return;
       }
@@ -277,11 +280,21 @@ function ContactSheetPageContent() {
             newFrameOrder.push(id);
           });
 
-          // Update state with new frames
-          setContactSheetState(prev => ({
-            frames: { ...prev.frames, ...newFrames },
-            frameOrder: [...prev.frameOrder, ...newFrameOrder],
-          }));
+          // If demo is active, replace demo data entirely
+          // If demo is not active, add to existing frames
+          if (showDemo) {
+            // Replace demo data with new uploads
+            setContactSheetState({
+              frames: newFrames,
+              frameOrder: newFrameOrder,
+            });
+          } else {
+            // Add to existing frames
+            setContactSheetState(prev => ({
+              frames: { ...prev.frames, ...newFrames },
+              frameOrder: [...prev.frameOrder, ...newFrameOrder],
+            }));
+          }
 
           // Track blob URLs for cleanup
           uploadedObjectUrlsRef.current = [
@@ -306,7 +319,7 @@ function ContactSheetPageContent() {
         setIsProcessing(false);
       }
     },
-    [contactSheetState.frameOrder.length]
+    [contactSheetState.frameOrder.length, showDemo]
   );
 
   // Loupe mouse handlers
