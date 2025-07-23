@@ -1,39 +1,36 @@
 import React from 'react';
 import Image from 'next/image';
-import { MEASUREMENTS, FilmStock, FILM_STOCKS } from '../utils/constants';
+import {
+  MEASUREMENTS,
+  FilmStock,
+  FILM_STOCKS,
+  Frame,
+} from '../utils/constants';
 
-interface FrameHighlight {
+interface StripFrame {
+  id: string;
+  frame: Frame;
   frameNumber: number;
-  type: 'default' | 'scribble' | 'circle';
 }
 
 interface NegativeStripProps {
-  images: string[];
-  startIndex: number;
-  highlights: FrameHighlight[];
-  xMarks: number[];
-  onHighlightsChange: (highlights: FrameHighlight[]) => void;
-  onXMarksChange: (xMarks: number[]) => void;
+  frames: StripFrame[];
+  rotation: number;
   filmStock: FilmStock;
   selectedHighlightType: string;
+  onFrameUpdate?: (frameId: string, updatedFrame: Frame) => void;
   onImageDelete?: (frameNumber: number) => void;
 }
 
 export const NegativeStrip = ({
-  images,
-  startIndex,
-  highlights,
-  xMarks,
-  onHighlightsChange,
-  onXMarksChange,
+  frames: frames,
+  rotation,
   filmStock,
   selectedHighlightType,
+  onFrameUpdate,
   onImageDelete,
 }: NegativeStripProps) => {
-  const framesInStrip = Math.min(6, images.length - startIndex);
-  const stripIndex = Math.floor(startIndex / 6);
-  const seed = stripIndex * 123.456;
-  const rotation = Math.sin(seed) * 0.25;
+  const framesInStrip = frames.length;
   const stripWidth = framesInStrip * MEASUREMENTS.frameWidth;
 
   const handleFrameClick = (frameNumber: number) => {
@@ -50,48 +47,34 @@ export const NegativeStrip = ({
       return;
     }
 
-    if (selectedHighlightType === 'x') {
-      // Handle X marking
-      onXMarksChange(
-        xMarks.includes(frameNumber)
-          ? xMarks.filter(num => num !== frameNumber)
-          : [...xMarks, frameNumber]
-      );
+    // Find the frame by frameNumber
+    const stripFrame = frames.find(sf => sf.frameNumber === frameNumber);
+    if (!stripFrame || !onFrameUpdate) return;
+
+    const { id: frameId, frame } = stripFrame;
+
+    // Map selectedHighlightType to highlight type
+    let highlightType: 'default' | 'scribble' | 'circle' | 'cross';
+    if (selectedHighlightType === 'scribble') {
+      highlightType = 'scribble';
+    } else if (selectedHighlightType === 'circle') {
+      highlightType = 'circle';
+    } else if (selectedHighlightType === 'cross') {
+      highlightType = 'cross';
+    } else if (selectedHighlightType === 'rectangle') {
+      highlightType = 'default';
     } else {
-      // Handle highlights using selected type - toggle individual highlight types
-      let highlightType: 'default' | 'scribble' | 'circle' = 'default';
-      if (selectedHighlightType === 'scribble') {
-        highlightType = 'scribble';
-      } else if (selectedHighlightType === 'circle') {
-        highlightType = 'circle';
-      } else if (selectedHighlightType === 'rectangle') {
-        highlightType = 'default';
-      }
-
-      // Check if this specific highlight type already exists for this frame
-      const existingHighlight = highlights.find(
-        h => h.frameNumber === frameNumber && h.type === highlightType
-      );
-
-      if (existingHighlight) {
-        // Remove only this specific highlight type
-        onHighlightsChange(
-          highlights.filter(
-            h => !(h.frameNumber === frameNumber && h.type === highlightType)
-          )
-        );
-      } else {
-        // Add new highlight of this type if a valid type is selected
-        if (
-          ['scribble', 'circle', 'rectangle'].includes(selectedHighlightType)
-        ) {
-          onHighlightsChange([
-            ...highlights,
-            { frameNumber, type: highlightType },
-          ]);
-        }
-      }
+      return; // Unknown highlight type
     }
+
+    // Toggle this highlight type
+    const hasThisHighlight = frame.highlights.includes(highlightType);
+    const newHighlights: ('default' | 'scribble' | 'circle' | 'cross')[] =
+      hasThisHighlight
+        ? frame.highlights.filter((h: string) => h !== highlightType)
+        : [...frame.highlights, highlightType];
+
+    onFrameUpdate(frameId, { ...frame, highlights: newHighlights });
   };
 
   return (
@@ -105,26 +88,21 @@ export const NegativeStrip = ({
         userSelect: 'none',
       }}
     >
-      {Array.from({ length: framesInStrip }, (_, index) => {
-        const imageIndex = startIndex + index;
-        const imagePath = images[imageIndex];
-        const frameNumber = imageIndex + 1;
+      {frames.map((stripFrame, index) => {
+        const { id: frameId, frame, frameNumber } = stripFrame;
 
-        // Get all highlights for this frame
-        const frameHighlights = highlights.filter(
-          h => h.frameNumber === frameNumber
-        );
-        const hasXMark = xMarks.includes(frameNumber);
+        if (!frame) return null;
 
         const getHighlightImage = (type: string) => {
           if (type === 'scribble') return '/frame-highlight-scribble.png';
           if (type === 'circle') return '/frame-highlight-circle.png';
+          if (type === 'cross') return '/frame-highlight-x.png';
           return '/frame-highlight-rectangle.png';
         };
 
         return (
           <div
-            key={index}
+            key={frameId}
             className="relative cursor-inherit flex items-center justify-center"
             style={{
               width: `${MEASUREMENTS.frameWidth}px`,
@@ -148,19 +126,19 @@ export const NegativeStrip = ({
                 handleFrameClick(frameNumber);
               }}
             >
-              {imagePath && (
+              {frame.src && (
                 <Image
                   src={
-                    imagePath.startsWith('blob:')
-                      ? imagePath
-                      : `/default-frames/${imagePath}`
+                    frame.src.startsWith('blob:')
+                      ? frame.src
+                      : `/default-frames/${frame.src}`
                   }
-                  alt={`Frame ${imageIndex + 1}`}
+                  alt={`Frame ${frameNumber}`}
                   width={MEASUREMENTS.imageWidth}
                   height={MEASUREMENTS.imageHeight}
                   className="absolute inset-0 w-full h-full object-cover pointer-events-none"
                   crossOrigin="anonymous"
-                  unoptimized={imagePath.startsWith('blob:')}
+                  unoptimized={frame.src.startsWith('blob:')}
                 />
               )}
             </div>
@@ -213,35 +191,22 @@ export const NegativeStrip = ({
               }}
             />
 
-            {/* Multiple highlight overlays */}
-            {frameHighlights.map((highlight, highlightIndex) => (
-              <div
-                key={`${frameNumber}-${highlight.type}-${highlightIndex}`}
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  backgroundImage: `url(${getHighlightImage(highlight.type)})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  backgroundRepeat: 'no-repeat',
-                  zIndex: 20 + highlightIndex,
-                  opacity: highlight.type === 'scribble' ? 1 : 0.9,
-                }}
-              />
-            ))}
-
-            {/* Conditional X mark overlay */}
-            {hasXMark && (
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  backgroundImage: 'url(/frame-highlight-x.png)',
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  backgroundRepeat: 'no-repeat',
-                  zIndex: 20,
-                  opacity: '0.9',
-                }}
-              />
+            {/* Highlight overlays */}
+            {frame.highlights.map(
+              (highlight: string, highlightIndex: number) => (
+                <div
+                  key={`${frameId}-${highlight}-${highlightIndex}`}
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    backgroundImage: `url(${getHighlightImage(highlight)})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    zIndex: 20 + highlightIndex,
+                    opacity: highlight === 'scribble' ? 1 : 0.9,
+                  }}
+                />
+              )
             )}
           </div>
         );

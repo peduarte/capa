@@ -37,3 +37,22 @@ export const FILM_STOCKS: Record<FilmStock, FilmStockConfig> = {
 };
 
 export const DEFAULT_FILM_STOCK: FilmStock = 'ilford-hp5';
+
+// New object-based state management types
+export interface Frame {
+  src: string;
+  highlights: ('default' | 'scribble' | 'circle' | 'cross')[];
+  fileName?: string; // Optional original filename
+  uploadedAt?: number; // Optional timestamp
+}
+
+export interface ContactSheetState {
+  frames: Record<string, Frame>;
+  frameOrder: string[];
+}
+
+// Legacy format types for backward compatibility
+export interface FrameHighlight {
+  frameNumber: number;
+  type: 'default' | 'scribble' | 'circle';
+}

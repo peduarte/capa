@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import download from '../utils/download';
-import { FilmStock, FILM_STOCKS } from '../utils/constants';
-
-interface FrameHighlight {
-  frameNumber: number;
-  type: 'default' | 'scribble' | 'circle';
-}
+import {
+  FilmStock,
+  FILM_STOCKS,
+  Frame,
+  FrameHighlight,
+} from '../utils/constants';
 
 interface DownloadButtonProps {
   images: string[];

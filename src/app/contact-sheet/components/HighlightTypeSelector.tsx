@@ -83,7 +83,7 @@ export const HighlightTypeSelector = ({
 
         <TooltipWrapper content="Cross (X)">
           <ToggleGroup.Item
-            value="x"
+            value="cross"
             className="px-2 py-1 text-xs text-white hover:bg-white/20 focus:outline-none aria-checked:bg-white aria-checked:text-black aria-checked:hover:bg-white rounded flex items-center"
           >
             <Cross1Icon className="w-4 h-4" />

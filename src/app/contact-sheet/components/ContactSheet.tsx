@@ -1,41 +1,32 @@
 import React from 'react';
 import { NegativeStrip } from './NegativeStrip';
-import { MEASUREMENTS, FilmStock } from '../utils/constants';
-
-interface FrameHighlight {
-  frameNumber: number;
-  type: 'default' | 'scribble' | 'circle';
-}
+import { MEASUREMENTS, FilmStock, Frame } from '../utils/constants';
 
 interface ContactSheetProps {
-  images: string[];
-  highlights: FrameHighlight[];
-  xMarks: number[];
-  onHighlightsChange: (highlights: FrameHighlight[]) => void;
-  onXMarksChange: (xMarks: number[]) => void;
+  frames: Record<string, Frame>;
+  frameOrder: string[];
   filmStock: FilmStock;
   selectedHighlightType: string;
   ref: React.RefObject<HTMLDivElement | null>;
   onMouseMove?: (event: React.MouseEvent) => void;
   onMouseLeave?: () => void;
+  onFrameUpdate?: (frameId: string, updatedFrame: Frame) => void;
   onImageDelete?: (frameNumber: number) => void;
 }
 
 export const ContactSheet = ({
-  images,
-  highlights,
-  xMarks,
-  onHighlightsChange,
-  onXMarksChange,
+  frames,
+  frameOrder,
   filmStock,
   selectedHighlightType,
   ref,
   onMouseMove,
   onMouseLeave,
+  onFrameUpdate,
   onImageDelete,
 }: ContactSheetProps) => {
-  const numberOfStrips = Math.ceil(images.length / 6);
-  const maxFramesPerStrip = Math.min(6, images.length);
+  const numberOfStrips = Math.ceil(frameOrder.length / 6);
+  const maxFramesPerStrip = Math.min(6, frameOrder.length);
   const maxStripWidth = maxFramesPerStrip * MEASUREMENTS.frameWidth;
 
   return (
@@ -56,20 +47,33 @@ export const ContactSheet = ({
       {/* Forward the original ref to the first child for download functionality */}
       <div ref={ref} className="absolute inset-0 pointer-events-none" />
 
-      {Array.from({ length: numberOfStrips }, (_, i) => (
-        <NegativeStrip
-          key={`strip-${i}`}
-          images={images}
-          startIndex={i * 6}
-          highlights={highlights}
-          xMarks={xMarks}
-          onHighlightsChange={onHighlightsChange}
-          onXMarksChange={onXMarksChange}
-          filmStock={filmStock}
-          selectedHighlightType={selectedHighlightType}
-          onImageDelete={onImageDelete}
-        />
-      ))}
+      {Array.from({ length: numberOfStrips }, (_, i) => {
+        const startIndex = i * 6;
+        const endIndex = Math.min(startIndex + 6, frameOrder.length);
+        const stripFrameIds = frameOrder.slice(startIndex, endIndex);
+
+        const stripFrames = stripFrameIds.map((frameId, index) => ({
+          id: frameId,
+          frame: frames[frameId],
+          frameNumber: startIndex + index + 1,
+        }));
+
+        // Calculate strip rotation for authentic look
+        const seed = i * 123.456;
+        const stripRotation = Math.sin(seed) * 0.25;
+
+        return (
+          <NegativeStrip
+            key={`strip-${i}`}
+            frames={stripFrames}
+            rotation={stripRotation}
+            filmStock={filmStock}
+            selectedHighlightType={selectedHighlightType}
+            onFrameUpdate={onFrameUpdate}
+            onImageDelete={onImageDelete}
+          />
+        );
+      })}
     </div>
   );
 };

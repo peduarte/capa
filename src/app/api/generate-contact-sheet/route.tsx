@@ -8,12 +8,14 @@ import {
 } from '../../contact-sheet/utils/constants';
 
 // Types for the request payload
+
+// Legacy format (for backward compatibility)
 interface FrameHighlight {
   frameNumber: number;
   type: 'default' | 'scribble' | 'circle';
 }
 
-interface ContactSheetRequest {
+interface ContactSheetRequestLegacy {
   images: string[];
   highlights?: FrameHighlight[];
   xMarks?: number[];
@@ -21,17 +23,76 @@ interface ContactSheetRequest {
   rotation?: number;
 }
 
+// New object-based format
+interface Frame {
+  src: string;
+  highlights: ('default' | 'scribble' | 'circle' | 'cross')[];
+}
+
+interface ContactSheetRequestNew {
+  frames: Record<string, Frame>;
+  frameOrder: string[];
+  filmStock?: FilmStock;
+  rotation?: number;
+}
+
+type ContactSheetRequest = ContactSheetRequestLegacy | ContactSheetRequestNew;
+
 export async function POST(request: NextRequest) {
   try {
     console.log('API route called');
     const body: ContactSheetRequest = await request.json();
-    const {
-      images,
-      highlights = [],
-      xMarks = [],
-      filmStock = DEFAULT_FILM_STOCK,
-      rotation = 0,
-    } = body;
+
+    // Detect which format is being used and normalize to legacy format for processing
+    let images: string[];
+    let highlights: FrameHighlight[];
+    let xMarks: number[];
+    let filmStock: FilmStock;
+    let rotation: number;
+
+    if ('frames' in body && 'frameOrder' in body) {
+      // New object-based format
+      console.log('Using new object-based format');
+      const {
+        frames,
+        frameOrder,
+        filmStock: fs = DEFAULT_FILM_STOCK,
+        rotation: rot = 0,
+      } = body;
+
+      images = frameOrder.map(id => frames[id].src);
+      highlights = [];
+      xMarks = [];
+
+      // Convert frames to legacy format
+      frameOrder.forEach((id, index) => {
+        const frame = frames[id];
+
+        // Add highlights for this frame (excluding cross marks which go to separate array)
+        frame.highlights.forEach(type => {
+          if (type === 'cross') {
+            xMarks.push(index + 1);
+          } else {
+            highlights.push({
+              frameNumber: index + 1,
+              type: type as 'default' | 'scribble' | 'circle',
+            });
+          }
+        });
+      });
+
+      filmStock = fs;
+      rotation = rot;
+    } else {
+      // Legacy array-based format
+      console.log('Using legacy array-based format');
+      const legacyBody = body as ContactSheetRequestLegacy;
+      images = legacyBody.images;
+      highlights = legacyBody.highlights || [];
+      xMarks = legacyBody.xMarks || [];
+      filmStock = legacyBody.filmStock || DEFAULT_FILM_STOCK;
+      rotation = legacyBody.rotation || 0;
+    }
 
     console.log(
       'Received images:',

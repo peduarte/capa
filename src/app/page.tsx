@@ -18,32 +18,35 @@ import {
   FILM_STOCKS,
   DEFAULT_FILM_STOCK,
   MEASUREMENTS,
+  Frame,
+  ContactSheetState,
+  FrameHighlight,
 } from './contact-sheet/utils/constants';
-
-// Types for highlights and X marks
-interface FrameHighlight {
-  frameNumber: number;
-  type: 'default' | 'scribble' | 'circle';
-}
 
 function ContactSheetPageContent() {
   const contactSheetRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+
+  // New object-based state
+  const [contactSheetState, setContactSheetState] = useState<ContactSheetState>(
+    {
+      frames: {},
+      frameOrder: [],
+    }
+  );
+
   const [errors, setErrors] = useState<string[]>([]);
   const [showDemo, setShowDemo] = useState(false); // Start with empty frames
   const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [highlights, setHighlights] = useState<FrameHighlight[]>([]);
-  const [xMarks, setXMarks] = useState<number[]>([]);
   const [selectedFilmStock, setSelectedFilmStock] =
     useState<FilmStock>(DEFAULT_FILM_STOCK);
   const [selectedHighlightType, setSelectedHighlightType] =
     useState<string>('rectangle');
   const [rotation, setRotation] = useState<number>(0); // 0, 90, 180, 270 degrees
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const uploadedImagesRef = useRef<string[]>([]); // Track images for cleanup
+  const uploadedObjectUrlsRef = useRef<string[]>([]); // Track blob URLs for cleanup
 
   // Loupe configuration
   const loupeSize = 188; // Adjust this value to change loupe size
@@ -116,7 +119,9 @@ function ContactSheetPageContent() {
           );
           break;
         case 'x':
-          setSelectedHighlightType(current => (current === 'x' ? '' : 'x'));
+          setSelectedHighlightType(current =>
+            current === 'cross' ? '' : 'cross'
+          );
           break;
         case 'r':
           setSelectedHighlightType(current =>
@@ -149,61 +154,156 @@ function ContactSheetPageContent() {
     };
   }, [isTouchDevice]);
 
-  // Demo image list (complete list from prototype)
-  const demoImageList = useMemo(
-    () => [
-      'frame-1.jpeg',
-      'frame-2.jpeg',
-      'frame-3.jpeg',
-      'frame-4.jpeg',
-      'frame-5.jpeg',
-      'frame-6.jpeg',
-      'frame-7.jpeg',
-      'frame-8.jpeg',
-      'frame-9.jpeg',
-      'frame-10.jpeg',
-      'frame-11.jpeg',
-      'frame-12.jpeg',
-      'frame-13.jpeg',
-      'frame-14.jpeg',
-      'frame-15.jpeg',
-      'frame-16.jpeg',
-      'frame-17.jpeg',
-      'frame-18.jpeg',
-      'frame-19.jpeg',
-      'frame-20.jpeg',
-      'frame-21.jpeg',
-      'frame-22.jpeg',
-      'frame-23.jpeg',
-      'frame-24.jpeg',
-      'frame-25.jpeg',
-      'frame-26.jpeg',
-      'frame-27.jpeg',
-      'frame-28.jpeg',
-      'frame-29.jpeg',
-      'frame-30.jpeg',
-      'frame-31.jpeg',
-      'frame-32.jpeg',
-      'frame-33.jpeg',
-      'frame-34.jpeg',
-      'frame-35.jpeg',
-      'frame-36.jpeg',
-      'frame-37.jpeg',
-      'frame-38.jpeg',
+  // Demo frame data (complete list from prototype)
+  const demoData: ContactSheetState = {
+    frames: {
+      demo_0: { src: 'frame-1.jpeg', highlights: [] },
+      demo_1: { src: 'frame-2.jpeg', highlights: [] },
+      demo_2: { src: 'frame-3.jpeg', highlights: [] },
+      demo_3: { src: 'frame-4.jpeg', highlights: [] },
+      demo_4: { src: 'frame-5.jpeg', highlights: [] },
+      demo_5: { src: 'frame-6.jpeg', highlights: [] },
+      demo_6: { src: 'frame-7.jpeg', highlights: [] },
+      demo_7: { src: 'frame-8.jpeg', highlights: [] },
+      demo_8: { src: 'frame-9.jpeg', highlights: [] },
+      demo_9: { src: 'frame-10.jpeg', highlights: [] },
+      demo_10: { src: 'frame-11.jpeg', highlights: [] },
+      demo_11: { src: 'frame-12.jpeg', highlights: [] },
+      demo_12: { src: 'frame-13.jpeg', highlights: [] },
+      demo_13: { src: 'frame-14.jpeg', highlights: [] },
+      demo_14: { src: 'frame-15.jpeg', highlights: [] },
+      demo_15: { src: 'frame-16.jpeg', highlights: [] },
+      demo_16: { src: 'frame-17.jpeg', highlights: [] },
+      demo_17: { src: 'frame-18.jpeg', highlights: [] },
+      demo_18: { src: 'frame-19.jpeg', highlights: [] },
+      demo_19: { src: 'frame-20.jpeg', highlights: [] },
+      demo_20: { src: 'frame-21.jpeg', highlights: [] },
+      demo_21: { src: 'frame-22.jpeg', highlights: [] },
+      demo_22: { src: 'frame-23.jpeg', highlights: [] },
+      demo_23: { src: 'frame-24.jpeg', highlights: [] },
+      demo_24: { src: 'frame-25.jpeg', highlights: [] },
+      demo_25: { src: 'frame-26.jpeg', highlights: [] },
+      demo_26: { src: 'frame-27.jpeg', highlights: [] },
+      demo_27: { src: 'frame-28.jpeg', highlights: [] },
+      demo_28: { src: 'frame-29.jpeg', highlights: [] },
+      demo_29: { src: 'frame-30.jpeg', highlights: [] },
+      demo_30: { src: 'frame-31.jpeg', highlights: [] },
+      demo_31: { src: 'frame-32.jpeg', highlights: [] },
+      demo_32: { src: 'frame-33.jpeg', highlights: [] },
+      demo_33: { src: 'frame-34.jpeg', highlights: [] },
+      demo_34: { src: 'frame-35.jpeg', highlights: [] },
+      demo_35: { src: 'frame-36.jpeg', highlights: [] },
+      demo_36: { src: 'frame-37.jpeg', highlights: [] },
+      demo_37: { src: 'frame-38.jpeg', highlights: [] },
+    },
+    frameOrder: [
+      'demo_0',
+      'demo_1',
+      'demo_2',
+      'demo_3',
+      'demo_4',
+      'demo_5',
+      'demo_6',
+      'demo_7',
+      'demo_8',
+      'demo_9',
+      'demo_10',
+      'demo_11',
+      'demo_12',
+      'demo_13',
+      'demo_14',
+      'demo_15',
+      'demo_16',
+      'demo_17',
+      'demo_18',
+      'demo_19',
+      'demo_20',
+      'demo_21',
+      'demo_22',
+      'demo_23',
+      'demo_24',
+      'demo_25',
+      'demo_26',
+      'demo_27',
+      'demo_28',
+      'demo_29',
+      'demo_30',
+      'demo_31',
+      'demo_32',
+      'demo_33',
+      'demo_34',
+      'demo_35',
+      'demo_36',
+      'demo_37',
     ],
-    []
-  );
+  };
 
   // Create array of 14 empty frames for default view
   const emptyFrames = useMemo(() => Array(14).fill(''), []);
 
+  // Create empty frame state for initial display
+  const createEmptyFrameState = (): ContactSheetState => {
+    const frames: Record<string, Frame> = {};
+    const frameOrder: string[] = [];
+
+    emptyFrames.forEach((_, index) => {
+      const id = `empty_${index}`;
+      frames[id] = {
+        src: '',
+        highlights: [],
+      };
+      frameOrder.push(id);
+    });
+
+    return { frames, frameOrder };
+  };
+
+  // Get current display state - actual frames or empty frames for initial display
+  const getDisplayState = (): ContactSheetState => {
+    if (contactSheetState.frameOrder.length > 0) {
+      return contactSheetState;
+    }
+    return createEmptyFrameState();
+  };
+
+  const displayState = getDisplayState();
+
+  // Helper to get current images from state
+  const getCurrentImages = (): string[] => {
+    return displayState.frameOrder.map(id => displayState.frames[id].src);
+  };
+
   // Use uploaded images if available, otherwise demo images if enabled, otherwise empty frames
-  const currentImages =
-    uploadedImages.length > 0
-      ? uploadedImages
-      : showDemo
-        ? demoImageList
-        : emptyFrames;
+  const currentImages = getCurrentImages();
+
+  // Helper functions to convert state to legacy format for DownloadButton
+  const getCurrentHighlights = (): FrameHighlight[] => {
+    const highlights: FrameHighlight[] = [];
+    contactSheetState.frameOrder.forEach((frameId, index) => {
+      const frame = contactSheetState.frames[frameId];
+      frame.highlights.forEach(type => {
+        if (type !== 'cross') {
+          // Exclude cross marks from highlights
+          highlights.push({
+            frameNumber: index + 1,
+            type: type as 'default' | 'scribble' | 'circle',
+          });
+        }
+      });
+    });
+    return highlights;
+  };
+
+  const getCurrentXMarks = (): number[] => {
+    const xMarks: number[] = [];
+    contactSheetState.frameOrder.forEach((frameId, index) => {
+      const frame = contactSheetState.frames[frameId];
+      if (frame.highlights.includes('cross')) {
+        xMarks.push(index + 1);
+      }
+    });
+    return xMarks;
+  };
 
   // Rotate contact sheet left (counter-clockwise)
   const rotateContactSheetLeft = useCallback(() => {
@@ -218,15 +318,13 @@ function ContactSheetPageContent() {
   // Clear contact sheet back to empty frames
   const clearContactSheet = useCallback(() => {
     // Clean up existing object URLs
-    revokeObjectUrls(uploadedImages);
-    setUploadedImages([]);
-    uploadedImagesRef.current = []; // Update ref
+    revokeObjectUrls(uploadedObjectUrlsRef.current);
+    setContactSheetState({ frames: {}, frameOrder: [] });
+    uploadedObjectUrlsRef.current = []; // Update ref
     setShowDemo(false);
     setErrors([]);
-    setHighlights([]);
-    setXMarks([]);
     setRotation(0); // Reset rotation
-  }, [uploadedImages]);
+  }, []);
 
   // Handle upload button click
   const handleUploadClick = () => {
@@ -248,10 +346,11 @@ function ContactSheetPageContent() {
       if (files.length === 0) return;
 
       // Check total image count (existing + new)
-      const totalImages = uploadedImages.length + files.length;
+      const currentFrameCount = contactSheetState.frameOrder.length;
+      const totalImages = currentFrameCount + files.length;
       if (totalImages > 50) {
         setErrors([
-          `Too many images. Maximum is 50 total (you have ${uploadedImages.length}, trying to add ${files.length}).`,
+          `Too many images. Maximum is 50 total (you have ${currentFrameCount}, trying to add ${files.length}).`,
         ]);
         return;
       }
@@ -265,12 +364,32 @@ function ContactSheetPageContent() {
         const fileErrors = getErrors(results);
 
         if (validImages.length > 0) {
-          // Append new images to existing ones (don't replace)
-          setUploadedImages(prev => [...prev, ...validImages]);
-          uploadedImagesRef.current = [
-            ...uploadedImagesRef.current,
-            ...validImages,
-          ]; // Update ref
+          // Generate IDs and create frame objects
+          const newFrames: Record<string, Frame> = {};
+          const newFrameOrder: string[] = [];
+
+          validImages.forEach((src, index) => {
+            const id = `frame_${Date.now()}_${index}`;
+            newFrames[id] = {
+              src,
+              highlights: [],
+              uploadedAt: Date.now(),
+            };
+            newFrameOrder.push(id);
+          });
+
+          // Update state with new frames
+          setContactSheetState(prev => ({
+            frames: { ...prev.frames, ...newFrames },
+            frameOrder: [...prev.frameOrder, ...newFrameOrder],
+          }));
+
+          // Track blob URLs for cleanup
+          uploadedObjectUrlsRef.current = [
+            ...uploadedObjectUrlsRef.current,
+            ...validImages.filter(src => src.startsWith('blob:')),
+          ];
+
           setShowDemo(false);
         }
 
@@ -288,7 +407,7 @@ function ContactSheetPageContent() {
         setIsProcessing(false);
       }
     },
-    [uploadedImages]
+    [contactSheetState.frameOrder.length]
   );
 
   // Loupe mouse handlers
@@ -393,10 +512,10 @@ function ContactSheetPageContent() {
   }, [processFiles]); // Only depend on processFiles which is stable with useCallback
 
   // Cleanup Object URLs when component unmounts to prevent memory leaks
-  // Don't cleanup on uploadedImages changes or it will revoke URLs before download
+  // Don't cleanup on state changes or it will revoke URLs before download
   useEffect(() => {
     return () => {
-      revokeObjectUrls(uploadedImagesRef.current);
+      revokeObjectUrls(uploadedObjectUrlsRef.current);
     };
   }, []); // Empty dependency array - only cleanup on unmount
 
@@ -406,53 +525,35 @@ function ContactSheetPageContent() {
       const imageIndex = frameNumber - 1;
       if (imageIndex < 0 || imageIndex >= currentImages.length) return;
 
-      if (showDemo && uploadedImages.length === 0) {
-        // Convert demo to uploaded images first, then delete
-        const updatedImages = demoImageList.filter(
-          (_, index) => index !== imageIndex
+      // Since demo frames are now loaded into normal state, treat all deletions the same
+      if (imageIndex >= contactSheetState.frameOrder.length) return;
+
+      const frameIdToDelete = contactSheetState.frameOrder[imageIndex];
+      const frameToDelete = contactSheetState.frames[frameIdToDelete];
+
+      // Revoke the object URL to prevent memory leaks (only for blob URLs)
+      if (frameToDelete?.src && frameToDelete.src.startsWith('blob:')) {
+        URL.revokeObjectURL(frameToDelete.src);
+        // Remove from cleanup tracking
+        uploadedObjectUrlsRef.current = uploadedObjectUrlsRef.current.filter(
+          url => url !== frameToDelete.src
         );
-
-        setUploadedImages(updatedImages);
-        uploadedImagesRef.current = updatedImages;
-        setShowDemo(false);
-      } else {
-        // Deleting from uploaded images (including converted demo images)
-        if (imageIndex >= uploadedImages.length) return;
-
-        // Remove the image from uploadedImages array
-        const updatedImages = uploadedImages.filter(
-          (_, index) => index !== imageIndex
-        );
-
-        // Revoke the object URL to prevent memory leaks (only for blob URLs)
-        if (
-          uploadedImages[imageIndex] &&
-          uploadedImages[imageIndex].startsWith('blob:')
-        ) {
-          URL.revokeObjectURL(uploadedImages[imageIndex]);
-        }
-
-        setUploadedImages(updatedImages);
-        uploadedImagesRef.current = updatedImages;
       }
 
-      // Update highlights and X marks - adjust frame numbers for remaining frames
-      const updatedHighlights = highlights
-        .filter(h => h.frameNumber !== frameNumber)
-        .map(h =>
-          h.frameNumber > frameNumber
-            ? { ...h, frameNumber: h.frameNumber - 1 }
-            : h
-        );
+      // Remove frame from state
+      const updatedFrames = { ...contactSheetState.frames };
+      delete updatedFrames[frameIdToDelete];
 
-      const updatedXMarks = xMarks
-        .filter(x => x !== frameNumber)
-        .map(x => (x > frameNumber ? x - 1 : x));
+      const updatedFrameOrder = contactSheetState.frameOrder.filter(
+        id => id !== frameIdToDelete
+      );
 
-      setHighlights(updatedHighlights);
-      setXMarks(updatedXMarks);
+      setContactSheetState({
+        frames: updatedFrames,
+        frameOrder: updatedFrameOrder,
+      });
     },
-    [uploadedImages, highlights, xMarks, currentImages, showDemo, demoImageList]
+    [contactSheetState, currentImages]
   );
 
   return (
@@ -473,7 +574,7 @@ function ContactSheetPageContent() {
               </button>
 
               {/* Demo Button or Clear Button */}
-              {uploadedImages.length > 0 ? (
+              {contactSheetState.frameOrder.length > 0 ? (
                 <button
                   onClick={clearContactSheet}
                   className="text-sm text-white px-3 py-1"
@@ -483,7 +584,10 @@ function ContactSheetPageContent() {
                 </button>
               ) : !showDemo ? (
                 <button
-                  onClick={() => setShowDemo(true)}
+                  onClick={() => {
+                    setContactSheetState(demoData);
+                    setShowDemo(true);
+                  }}
                   className="text-sm text-white px-3 py-1"
                   disabled={isProcessing || isDragOver}
                 >
@@ -492,11 +596,11 @@ function ContactSheetPageContent() {
               ) : null}
             </div>
 
-            {(uploadedImages.length > 0 || showDemo) && (
+            {(contactSheetState.frameOrder.length > 0 || showDemo) && (
               <DownloadButton
                 images={currentImages}
-                highlights={highlights}
-                xMarks={xMarks}
+                highlights={getCurrentHighlights()}
+                xMarks={getCurrentXMarks()}
                 filmStock={selectedFilmStock}
                 rotation={rotation}
                 onDownloadStateChange={setIsDownloading}
@@ -506,7 +610,7 @@ function ContactSheetPageContent() {
         </div>
 
         {/* Bottom toolbar - only show when there are images or demo is active */}
-        {(uploadedImages.length > 0 || showDemo) && (
+        {(contactSheetState.frameOrder.length > 0 || showDemo) && (
           <div className="fixed bottom-0 z-40 bg-black/80 backdrop-blur-sm flex gap-2 md:gap-4 left-1/2 -translate-x-1/2 p-2 md:p-4 rounded-tl-lg rounded-tr-lg border-1 border-white/20">
             <div className="flex items-center space-x-2">
               <Select.Root
@@ -672,7 +776,9 @@ function ContactSheetPageContent() {
         <div
           ref={containerRef}
           className={`w-full bg-black overflow-auto flex items-center justify-center pt-12 ${
-            uploadedImages.length > 0 || showDemo ? 'pb-[120px]' : 'pb-12'
+            contactSheetState.frameOrder.length > 0 || showDemo
+              ? 'pb-[120px]'
+              : 'pb-12'
           }`}
           style={{
             minHeight: 'calc(100vh - 60px)',
@@ -681,7 +787,7 @@ function ContactSheetPageContent() {
           <div
             ref={loupeContactSheetRef}
             className={
-              uploadedImages.length === 0 && !showDemo
+              contactSheetState.frameOrder.length === 0 && !showDemo
                 ? 'pointer-events-none'
                 : ''
             }
@@ -697,13 +803,19 @@ function ContactSheetPageContent() {
           >
             <ContactSheet
               ref={contactSheetRef}
-              images={currentImages}
-              highlights={highlights}
-              xMarks={xMarks}
-              onHighlightsChange={setHighlights}
-              onXMarksChange={setXMarks}
+              frames={displayState.frames}
+              frameOrder={displayState.frameOrder}
               filmStock={selectedFilmStock}
               selectedHighlightType={selectedHighlightType}
+              onFrameUpdate={(frameId, updatedFrame) => {
+                // Only update if it's not an empty frame
+                if (!frameId.startsWith('empty_')) {
+                  setContactSheetState(prev => ({
+                    ...prev,
+                    frames: { ...prev.frames, [frameId]: updatedFrame },
+                  }));
+                }
+              }}
               onMouseMove={handleContactSheetMouseMove}
               onMouseLeave={handleContactSheetMouseLeave}
               onImageDelete={handleImageDelete}
@@ -749,13 +861,11 @@ function ContactSheetPageContent() {
               >
                 <ContactSheet
                   ref={contactSheetRef}
-                  images={currentImages}
-                  highlights={highlights}
-                  xMarks={xMarks}
-                  onHighlightsChange={() => {}} // No-op for loupe
-                  onXMarksChange={() => {}} // No-op for loupe
+                  frames={displayState.frames}
+                  frameOrder={displayState.frameOrder}
                   filmStock={selectedFilmStock}
                   selectedHighlightType="" // Disable interactions in loupe
+                  onFrameUpdate={() => {}} // No-op for loupe
                   onImageDelete={() => {}} // No-op for loupe
                 />
               </div>
