@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import download from '../utils/download';
-import { FilmStock } from '../utils/constants';
+import { FilmStock, FILM_STOCKS } from '../utils/constants';
 
 interface FrameHighlight {
   frameNumber: number;
@@ -42,12 +42,11 @@ export const DownloadButton = ({
     setError(null);
 
     try {
-      // Generate filename with timestamp
-      const timestamp = new Date()
-        .toISOString()
-        .slice(0, 19)
-        .replace(/:/g, '-');
-      const filename = `contact-sheet-${timestamp}.png`;
+      // Generate filename with film name
+      const filmName = FILM_STOCKS[filmStock].name
+        .toLowerCase()
+        .replace(/\s+/g, '-');
+      const filename = `contact-sheet-${filmName}.png`;
 
       // Convert blob URLs to data URLs if needed for server processing
       const processedImages = await Promise.all(
