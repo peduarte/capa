@@ -526,7 +526,7 @@ function ContactSheetPageContent() {
         {/* Bottom toolbar - only show when there are images or demo is active */}
         {(contactSheetState.frameOrder.length > 0 || showDemo) && (
           <div className="fixed bottom-0 z-40 bg-black/80 backdrop-blur-sm flex gap-2 md:gap-4 left-1/2 -translate-x-1/2 p-2 md:p-4 rounded-tl-lg rounded-tr-lg border-1 border-white/20">
-            <div className="flex items-center space-x-2 w-[100px]">
+            <div className="flex items-center space-x-2">
               <Select.Root
                 value={selectedFilmStock}
                 onValueChange={value =>
