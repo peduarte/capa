@@ -107,12 +107,22 @@ function ContactSheetPageContent() {
         return;
       }
 
+      const key = event.key.toLowerCase();
+
+      // Handle escape key to deselect current action
+      if (key === 'escape') {
+        if (selectedToolbarAction) {
+          setSelectedToolbarAction('');
+          event.preventDefault();
+        }
+        return;
+      }
+
       // Don't handle shortcuts if any modifier keys are pressed
       if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) {
         return;
       }
 
-      const key = event.key.toLowerCase();
       switch (key) {
         case 'c':
           setSelectedToolbarAction(current =>
@@ -158,7 +168,7 @@ function ContactSheetPageContent() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isTouchDevice]);
+  }, [isTouchDevice, selectedToolbarAction]);
 
   // Demo frame data (loaded from external TypeScript file)
   const demoData: ContactSheetState = defaultFrameData;
