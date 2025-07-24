@@ -106,7 +106,7 @@ export const NegativeStrip = ({
             style={{
               width: `${MEASUREMENTS.frameWidth}px`,
               height: `${MEASUREMENTS.frameHeight}px`,
-              backgroundImage: 'url(/frame.png)',
+              backgroundImage: `url(/${FILM_STOCKS[filmStock].id}/frame.png)`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat',
@@ -135,7 +135,7 @@ export const NegativeStrip = ({
                   alt={`Frame ${frameNumber}`}
                   width={MEASUREMENTS.imageWidth}
                   height={MEASUREMENTS.imageHeight}
-                  className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                  className="absolute inset-0 w-full h-full object-cover pointer-events-none z-10"
                   crossOrigin="anonymous"
                   unoptimized={frame.src.startsWith('blob:')}
                 />
@@ -154,15 +154,15 @@ export const NegativeStrip = ({
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
-                zIndex: 10,
+                zIndex: 1,
               }}
             />
 
-            {/* Film stock footer overlay */}
+            {/* Film DX overlay */}
             <div
               className="absolute pointer-events-none"
               style={{
-                bottom: '0px',
+                bottom: '1px',
                 left: 0,
                 width: '188px',
                 height: '11px',
@@ -170,7 +170,7 @@ export const NegativeStrip = ({
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
-                zIndex: 10,
+                zIndex: 1,
               }}
             />
 
@@ -186,7 +186,39 @@ export const NegativeStrip = ({
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
-                zIndex: 11,
+                zIndex: 1,
+              }}
+            />
+
+            {/* Sprockets overlay - top */}
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                top: '11px',
+                left: 0,
+                width: '188px',
+                height: '14px',
+                backgroundImage: `url(/${FILM_STOCKS[filmStock].id}/sprockets.png)`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                zIndex: 1,
+              }}
+            />
+
+            {/* Sprockets overlay - bottom */}
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                bottom: '11px',
+                left: 0,
+                width: '188px',
+                height: '14px',
+                backgroundImage: `url(/${FILM_STOCKS[filmStock].id}/sprockets.png)`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                zIndex: 1,
               }}
             />
 
@@ -202,7 +234,7 @@ export const NegativeStrip = ({
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     backgroundRepeat: 'no-repeat',
-                    zIndex: 20 + highlightIndex,
+                    zIndex: 20,
                     opacity: highlight === 'scribble' ? 1 : 0.9,
                   }}
                 />

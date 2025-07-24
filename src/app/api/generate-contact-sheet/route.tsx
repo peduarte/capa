@@ -213,7 +213,7 @@ function ContactSheetContent({
                 >
                   {/* Frame background */}
                   <img
-                    src={`${baseUrl}/frame.png`}
+                    src={`${baseUrl}/${FILM_STOCKS[filmStock].id}/frame.png`}
                     style={{
                       position: 'absolute',
                       top: 0,
@@ -233,21 +233,21 @@ function ContactSheetContent({
                       left: 0,
                       width: 188 * scaleFactor,
                       height: 11 * scaleFactor,
-                      zIndex: 10,
+                      zIndex: 1,
                       objectFit: 'cover',
                     }}
                   />
 
-                  {/* Film stock footer overlay */}
+                  {/* Film DX overlay */}
                   <img
                     src={`${baseUrl}/${FILM_STOCKS[filmStock].id}/dx.png`}
                     style={{
                       position: 'absolute',
-                      bottom: 2 * scaleFactor,
+                      bottom: 1 * scaleFactor,
                       left: 0,
                       width: 188 * scaleFactor,
                       height: 11 * scaleFactor,
-                      zIndex: 10,
+                      zIndex: 1,
                       objectFit: 'cover',
                     }}
                   />
@@ -257,11 +257,39 @@ function ContactSheetContent({
                     src={`${baseUrl}/${FILM_STOCKS[filmStock].id}/index-${frameNumber}.png`}
                     style={{
                       position: 'absolute',
-                      bottom: 2 * scaleFactor,
+                      bottom: 1 * scaleFactor,
                       left: 0,
                       width: 188 * scaleFactor,
                       height: 11 * scaleFactor,
-                      zIndex: 11,
+                      zIndex: 1,
+                      objectFit: 'cover',
+                    }}
+                  />
+
+                  {/* Sprockets overlay - top */}
+                  <img
+                    src={`${baseUrl}/${FILM_STOCKS[filmStock].id}/sprockets.png`}
+                    style={{
+                      position: 'absolute',
+                      top: 11 * scaleFactor,
+                      left: 0,
+                      width: 188 * scaleFactor,
+                      height: 14 * scaleFactor,
+                      zIndex: 1,
+                      objectFit: 'cover',
+                    }}
+                  />
+
+                  {/* Sprockets overlay - bottom */}
+                  <img
+                    src={`${baseUrl}/${FILM_STOCKS[filmStock].id}/sprockets.png`}
+                    style={{
+                      position: 'absolute',
+                      bottom: 11 * scaleFactor,
+                      left: 0,
+                      width: 188 * scaleFactor,
+                      height: 14 * scaleFactor,
+                      zIndex: 1,
                       objectFit: 'cover',
                     }}
                   />
@@ -274,7 +302,7 @@ function ContactSheetContent({
                         width: IMAGE_WIDTH,
                         height: IMAGE_HEIGHT,
                         display: 'flex',
-                        zIndex: 5,
+                        zIndex: 10,
                       }}
                     >
                       <img
