@@ -827,6 +827,7 @@ function ContactSheetPageContent() {
                     ? 'crosshair'
                     : 'default',
               transform: `rotate(${rotation}deg)`,
+              minWidth: '0',
             }}
           >
             <ContactSheet
