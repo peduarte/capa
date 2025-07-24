@@ -10,7 +10,8 @@ export type FilmStock =
   | 'ilford-hp5'
   | 'kodak-portra-400'
   | 'ilford-xp2'
-  | 'kodak-ultramax';
+  | 'kodak-ultramax'
+  | 'kodak-gold-200';
 
 export interface FilmStockConfig {
   id: FilmStock;
@@ -33,6 +34,10 @@ export const FILM_STOCKS: Record<FilmStock, FilmStockConfig> = {
   'kodak-ultramax': {
     id: 'kodak-ultramax',
     name: 'Kodak Ultramax 400',
+  },
+  'kodak-gold-200': {
+    id: 'kodak-gold-200',
+    name: 'Kodak Gold 200',
   },
 };
 
