@@ -43,36 +43,7 @@ export const DownloadButton = ({
   const handleDownload = async () => {
     if (!frameOrder.length || isDownloading) return;
 
-    // Calculate highlight statistics for tracking
-    const highlightStats = frameOrder.reduce(
-      (stats, frameId) => {
-        const frame = frames[frameId];
-        if (frame.highlights.circle) stats.circles++;
-        if (frame.highlights.scribble) stats.scribbles++;
-        if (frame.highlights.cross) stats.crosses++;
-        if (
-          frame.highlights.default ||
-          frame.highlights.circle ||
-          frame.highlights.scribble
-        ) {
-          stats.totalHighlights++;
-        }
-        return stats;
-      },
-      { circles: 0, scribbles: 0, crosses: 0, totalHighlights: 0 }
-    );
-
-    // Track the export event with detailed information
-    trackEvent('export', {
-      _value: frameOrder.length,
-      filmStock: filmStock,
-      rotation: rotation,
-      frameCount: frameOrder.length,
-      circles: highlightStats.circles,
-      scribbles: highlightStats.scribbles,
-      crosses: highlightStats.crosses,
-      totalHighlights: highlightStats.totalHighlights,
-    } as object); // Cast to object as per Fathom documentation
+    trackEvent(`export with film:${filmStock}`);
 
     updateDownloadingState(true);
     setError(null); // Clear any previous errors
