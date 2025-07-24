@@ -644,9 +644,9 @@ function ContactSheetPageContent() {
         {/* Drag Overlay */}
         {isDragOver && (
           <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
-            <div className="py-8 px-12 border-1 border-dashed border-white/50">
+            <div className="py-8 px-12">
               <div className="text-center">
-                <h3 className="text-l font-semibold ">Let your frames go</h3>
+                <h3 className="text-xl font-semibold">Drop images</h3>
               </div>
             </div>
           </div>
@@ -655,11 +655,9 @@ function ContactSheetPageContent() {
         {/* Processing Overlay */}
         {isProcessing && (
           <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
-            <div className="py-8 px-12 border-1 border-dashed border-white/50">
+            <div className="py-8 px-12">
               <div className="text-center">
-                <h3 className="text-l font-semibold ">
-                  Creating your contact sheet...
-                </h3>
+                <h3 className="text-xl font-semibold ">Creating...</h3>
               </div>
             </div>
           </div>
@@ -668,11 +666,9 @@ function ContactSheetPageContent() {
         {/* Download Overlay */}
         {isDownloading && (
           <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
-            <div className="py-8 px-12 border-1 border-dashed border-white/50">
+            <div className="py-8 px-12">
               <div className="text-center">
-                <h3 className="text-l font-semibold ">
-                  Generating your download...
-                </h3>
+                <h3 className="text-xl font-semibold ">Geneating...</h3>
               </div>
             </div>
           </div>
