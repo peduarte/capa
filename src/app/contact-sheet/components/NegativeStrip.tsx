@@ -17,7 +17,7 @@ interface NegativeStripProps {
   frames: StripFrame[];
   rotation: number;
   filmStock: FilmStock;
-  selectedHighlightType: string;
+  selectedToolbarAction: string;
   onFrameUpdate?: (frameId: string, updatedFrame: Frame) => void;
   onImageDelete?: (frameNumber: number) => void;
 }
@@ -26,7 +26,7 @@ export const NegativeStrip = ({
   frames: frames,
   rotation,
   filmStock,
-  selectedHighlightType,
+  selectedToolbarAction,
   onFrameUpdate,
   onImageDelete,
 }: NegativeStripProps) => {
@@ -34,7 +34,7 @@ export const NegativeStrip = ({
   const stripWidth = framesInStrip * MEASUREMENTS.frameWidth;
 
   const handleFrameClick = (frameNumber: number) => {
-    if (selectedHighlightType === 'delete') {
+    if (selectedToolbarAction === 'delete') {
       // Handle image deletion
       if (onImageDelete) {
         onImageDelete(frameNumber);
@@ -48,15 +48,15 @@ export const NegativeStrip = ({
 
     const { id: frameId, frame } = stripFrame;
 
-    // Map selectedHighlightType to highlight type
+    // Map selectedToolbarAction to highlight type
     let highlightType: 'default' | 'scribble' | 'circle' | 'cross';
-    if (selectedHighlightType === 'scribble') {
+    if (selectedToolbarAction === 'scribble') {
       highlightType = 'scribble';
-    } else if (selectedHighlightType === 'circle') {
+    } else if (selectedToolbarAction === 'circle') {
       highlightType = 'circle';
-    } else if (selectedHighlightType === 'cross') {
+    } else if (selectedToolbarAction === 'cross') {
       highlightType = 'cross';
-    } else if (selectedHighlightType === 'rectangle') {
+    } else if (selectedToolbarAction === 'rectangle') {
       highlightType = 'default';
     } else {
       return; // Unknown highlight type
@@ -108,12 +108,12 @@ export const NegativeStrip = ({
             }}
             onClick={event => {
               // Do nothing if no highlight type is selected or if loupe is selected
-              if (!selectedHighlightType || selectedHighlightType === 'loupe') {
+              if (!selectedToolbarAction || selectedToolbarAction === 'loupe') {
                 return;
               }
 
               // For sticker mode, let the event bubble up to ContactSheet (don't process or stop propagation)
-              if (selectedHighlightType.startsWith('sticker-')) {
+              if (selectedToolbarAction.startsWith('sticker-')) {
                 return;
               }
 

@@ -13,7 +13,7 @@ interface ContactSheetProps {
   frames: Record<string, Frame>;
   frameOrder: string[];
   filmStock: FilmStock;
-  selectedHighlightType: string;
+  selectedToolbarAction: string;
   stickers?: Sticker[];
   ref: React.RefObject<HTMLDivElement | null>;
   onMouseMove?: (event: React.MouseEvent) => void;
@@ -28,7 +28,7 @@ export const ContactSheet = ({
   frames,
   frameOrder,
   filmStock,
-  selectedHighlightType,
+  selectedToolbarAction,
   stickers,
   ref,
   onMouseMove,
@@ -44,14 +44,14 @@ export const ContactSheet = ({
 
   const handleContactSheetMouseDown = (event: React.MouseEvent) => {
     // Check if it's a sticker mode
-    if (selectedHighlightType.startsWith('sticker-') && onStickerUpdate) {
+    if (selectedToolbarAction.startsWith('sticker-') && onStickerUpdate) {
       // Calculate click position relative to the contact sheet
       const rect = event.currentTarget.getBoundingClientRect();
       const clickX = event.clientX - rect.left;
       const clickY = event.clientY - rect.top;
 
-      // Extract sticker type from selectedHighlightType (e.g., "sticker-dot" -> "dot")
-      const stickerType = selectedHighlightType.replace(
+      // Extract sticker type from selectedToolbarAction (e.g., "sticker-dot" -> "dot")
+      const stickerType = selectedToolbarAction.replace(
         'sticker-',
         ''
       ) as StickerType;
@@ -123,7 +123,7 @@ export const ContactSheet = ({
             frames={stripFrames}
             rotation={stripRotation}
             filmStock={filmStock}
-            selectedHighlightType={selectedHighlightType}
+            selectedToolbarAction={selectedToolbarAction}
             onFrameUpdate={onFrameUpdate}
             onImageDelete={onImageDelete}
           />

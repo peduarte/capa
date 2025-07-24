@@ -43,7 +43,7 @@ function ContactSheetPageContent() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [selectedFilmStock, setSelectedFilmStock] =
     useState<FilmStock>('ilford-hp5');
-  const [selectedHighlightType, setSelectedHighlightType] =
+  const [selectedToolbarAction, setSelectedToolbarAction] =
     useState<string>('rectangle');
   const [rotation, setRotation] = useState<number>(0); // 0, 90, 180, 270 degrees
   const [stickers, setStickers] = useState<Sticker[]>([]);
@@ -79,20 +79,20 @@ function ContactSheetPageContent() {
       setIsTouchDevice(isTouch);
 
       // If on touch device and loupe is selected, reset to rectangle
-      if (isTouch && selectedHighlightType === 'loupe') {
-        setSelectedHighlightType('rectangle');
+      if (isTouch && selectedToolbarAction === 'loupe') {
+        setSelectedToolbarAction('rectangle');
       }
     };
 
     checkTouchDevice();
-  }, [selectedHighlightType]);
+  }, [selectedToolbarAction]);
 
   // Hide loupe when switching away from loupe mode
   useEffect(() => {
-    if (selectedHighlightType !== 'loupe') {
+    if (selectedToolbarAction !== 'loupe') {
       setLoupeVisible(false);
     }
-  }, [selectedHighlightType]);
+  }, [selectedToolbarAction]);
 
   // Keyboard shortcuts for highlight type selection
   useEffect(() => {
@@ -114,33 +114,33 @@ function ContactSheetPageContent() {
       const key = event.key.toLowerCase();
       switch (key) {
         case 'c':
-          setSelectedHighlightType(current =>
+          setSelectedToolbarAction(current =>
             current === 'circle' ? '' : 'circle'
           );
           break;
         case 's':
-          setSelectedHighlightType(current =>
+          setSelectedToolbarAction(current =>
             current === 'scribble' ? '' : 'scribble'
           );
           break;
         case 'x':
-          setSelectedHighlightType(current =>
+          setSelectedToolbarAction(current =>
             current === 'cross' ? '' : 'cross'
           );
           break;
         case 'r':
-          setSelectedHighlightType(current =>
+          setSelectedToolbarAction(current =>
             current === 'rectangle' ? '' : 'rectangle'
           );
           break;
         case 'd':
-          setSelectedHighlightType(current =>
+          setSelectedToolbarAction(current =>
             current === 'delete' ? '' : 'delete'
           );
           break;
         case 'l':
           if (!isTouchDevice) {
-            setSelectedHighlightType(current =>
+            setSelectedToolbarAction(current =>
               current === 'loupe' ? '' : 'loupe'
             );
           }
@@ -322,7 +322,7 @@ function ContactSheetPageContent() {
   const handleContactSheetMouseMove = useCallback(
     (event: React.MouseEvent) => {
       if (
-        selectedHighlightType !== 'loupe' ||
+        selectedToolbarAction !== 'loupe' ||
         !loupeContactSheetRef.current ||
         isTouchDevice
       )
@@ -370,14 +370,14 @@ function ContactSheetPageContent() {
       });
       setLoupeOffset({ x: normalizedX, y: normalizedY });
     },
-    [selectedHighlightType, currentImages, loupeSize, isTouchDevice]
+    [selectedToolbarAction, currentImages, loupeSize, isTouchDevice]
   );
 
   const handleContactSheetMouseLeave = useCallback(() => {
-    if (selectedHighlightType === 'loupe' && !isTouchDevice) {
+    if (selectedToolbarAction === 'loupe' && !isTouchDevice) {
       setLoupeVisible(false);
     }
-  }, [selectedHighlightType, isTouchDevice]);
+  }, [selectedToolbarAction, isTouchDevice]);
 
   // Sticker drag handlers
   const handleStickerMouseDown = useCallback(
@@ -702,8 +702,8 @@ function ContactSheetPageContent() {
 
             {/* Center-Right: Highlight Type Selector */}
             <Toolbar
-              selectedType={selectedHighlightType}
-              onTypeChange={setSelectedHighlightType}
+              selectedAction={selectedToolbarAction}
+              onActionChange={setSelectedToolbarAction}
               hideLoupeOption={isTouchDevice}
             />
           </div>
@@ -785,9 +785,9 @@ function ContactSheetPageContent() {
             }
             style={{
               cursor:
-                selectedHighlightType === 'loupe' && !isTouchDevice
+                selectedToolbarAction === 'loupe' && !isTouchDevice
                   ? `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='${loupeSize}' height='${loupeSize}' viewBox='0 0 ${loupeSize} ${loupeSize}'%3E%3Ccircle cx='${loupeSize / 2}' cy='${loupeSize / 2}' r='${loupeSize / 2 - 2}' fill='none' stroke='%23ffffff' stroke-width='2' opacity='0.8'/%3E%3C/svg%3E") ${loupeSize / 2} ${loupeSize / 2}, auto`
-                  : selectedHighlightType === 'delete'
+                  : selectedToolbarAction === 'delete'
                     ? 'crosshair'
                     : 'default',
               transform: `rotate(${rotation}deg)`,
@@ -798,7 +798,7 @@ function ContactSheetPageContent() {
               frames={displayState.frames}
               frameOrder={displayState.frameOrder}
               filmStock={selectedFilmStock}
-              selectedHighlightType={selectedHighlightType}
+              selectedToolbarAction={selectedToolbarAction}
               stickers={stickers}
               onStickerMouseDown={handleStickerMouseDown}
               onStickerUpdate={setStickers}
@@ -859,7 +859,7 @@ function ContactSheetPageContent() {
                   frames={displayState.frames}
                   frameOrder={displayState.frameOrder}
                   filmStock={selectedFilmStock}
-                  selectedHighlightType="" // Disable interactions in loupe
+                  selectedToolbarAction="" // Disable interactions in loupe
                   stickers={stickers}
                   onStickerMouseDown={handleStickerMouseDown}
                   onStickerUpdate={() => {}} // No-op for loupe

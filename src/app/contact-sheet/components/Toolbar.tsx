@@ -13,8 +13,8 @@ import {
 } from '@radix-ui/react-icons';
 
 interface ToolbarProps {
-  selectedType: string;
-  onTypeChange: (type: string) => void;
+  selectedAction: string;
+  onActionChange: (action: string) => void;
   hideLoupeOption?: boolean;
 }
 
@@ -42,17 +42,17 @@ function TooltipWrapper({
 }
 
 export const Toolbar = ({
-  selectedType,
-  onTypeChange,
+  selectedAction,
+  onActionChange,
   hideLoupeOption = false,
 }: ToolbarProps) => {
   return (
     <div className="flex items-center space-x-2 text-sm">
       <ToggleGroup.Root
         type="single"
-        value={selectedType}
+        value={selectedAction}
         onValueChange={value => {
-          onTypeChange(value || '');
+          onActionChange(value || '');
         }}
         className="flex gap-1"
       >
