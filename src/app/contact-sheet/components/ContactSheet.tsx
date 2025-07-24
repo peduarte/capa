@@ -41,7 +41,7 @@ export const ContactSheet = ({
   const maxFramesPerStrip = Math.min(6, frameOrder.length);
   const maxStripWidth = maxFramesPerStrip * MEASUREMENTS.frameWidth;
 
-  const handleContactSheetClick = (event: React.MouseEvent) => {
+  const handleContactSheetMouseDown = (event: React.MouseEvent) => {
     if (selectedHighlightType === 'sticker' && onStickerUpdate) {
       // Calculate click position relative to the contact sheet
       const rect = event.currentTarget.getBoundingClientRect();
@@ -92,7 +92,7 @@ export const ContactSheet = ({
       }}
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
-      onClick={handleContactSheetClick}
+      onMouseDown={handleContactSheetMouseDown}
     >
       {/* Forward the original ref to the first child for download functionality */}
       <div ref={ref} className="absolute inset-0 pointer-events-none" />
