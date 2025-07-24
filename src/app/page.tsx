@@ -624,10 +624,8 @@ function ContactSheetPageContent() {
 
             {(contactSheetState.frameOrder.length > 0 || showDemo) && (
               <DownloadButton
-                frames={showDemo ? demoData.frames : contactSheetState.frames}
-                frameOrder={
-                  showDemo ? demoData.frameOrder : contactSheetState.frameOrder
-                }
+                frames={contactSheetState.frames}
+                frameOrder={contactSheetState.frameOrder}
                 filmStock={selectedFilmStock}
                 rotation={rotation}
                 stickers={stickers}
@@ -803,11 +801,7 @@ function ContactSheetPageContent() {
         {/* Contact Sheet - Scrollable at natural size */}
         <div
           ref={containerRef}
-          className={`w-full bg-black overflow-auto flex items-center justify-center pt-12 ${
-            contactSheetState.frameOrder.length > 0 || showDemo
-              ? 'pb-[120px]'
-              : 'pb-12'
-          }`}
+          className={`w-full bg-black overflow-auto flex items-center justify-center`}
           style={{
             minHeight: 'calc(100vh - 60px)',
           }}

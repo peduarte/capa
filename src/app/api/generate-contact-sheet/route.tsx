@@ -153,11 +153,11 @@ function ContactSheetContent({
   const maxStripWidth = maxFramesPerStrip * FRAME_WIDTH;
 
   // Calculate container dimensions - match ContactSheet.tsx exactly
-  const baseWidth = maxStripWidth + 32 * scaleFactor; // 16px padding on each side
+  const baseWidth = maxStripWidth + 128 * scaleFactor; // 64px padding on each side
   const baseHeight =
     numberOfStrips * FRAME_HEIGHT +
     (numberOfStrips - 1) * 16 * scaleFactor +
-    32 * scaleFactor; // 16px padding top/bottom
+    128 * scaleFactor; // 64px padding top/bottom
 
   return (
     <div
@@ -170,7 +170,7 @@ function ContactSheetContent({
         transformOrigin: 'center center',
         display: 'flex',
         flexDirection: 'column',
-        padding: 16 * scaleFactor, // 16px padding to match ContactSheet
+        padding: 64 * scaleFactor, // 64px padding to match ContactSheet
       }}
     >
       {Array.from({ length: numberOfStrips }, (_, stripIndex) => {
@@ -333,7 +333,7 @@ function ContactSheetContent({
                     .map(([highlight], highlightIndex) => (
                       <img
                         key={`${frameId}-${highlight}-${highlightIndex}`}
-                        src={`${baseUrl}${getHighlightImage(highlight as 'default' | 'scribble' | 'circle' | 'cross')}`}
+                        src={`${baseUrl}${getHighlightImage(highlight as 'rectangle' | 'scribble' | 'circle' | 'cross')}`}
                         style={{
                           position: 'absolute',
                           left: 0,
@@ -383,13 +383,8 @@ function ContactSheetContent({
   );
 }
 
-function getHighlightImage(
-  type: 'default' | 'scribble' | 'circle' | 'cross'
-): string {
-  if (type === 'scribble') return '/frame-highlight-scribble.png';
-  if (type === 'circle') return '/frame-highlight-circle.png';
-  if (type === 'cross') return '/frame-highlight-x.png';
-  return '/frame-highlight-rectangle.png';
+function getHighlightImage(type: string): string {
+  return `/frame-highlight-${type}.png`;
 }
 
 function getContactSheetDimensions(
@@ -406,8 +401,8 @@ function getContactSheetDimensions(
   const baseWidth = maxStripWidth;
   const baseHeight = numberOfStrips * FRAME_HEIGHT + (numberOfStrips - 1) * 16;
 
-  // Add 16px padding on all sides to match ContactSheet
-  const padding = 32; // 16px padding on each side
+  // Add 64px padding on all sides to match ContactSheet
+  const padding = 128; // 64px padding on each side
 
   const contentWidth = baseWidth + padding;
   const contentHeight = baseHeight + padding;
