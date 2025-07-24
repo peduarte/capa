@@ -128,13 +128,13 @@ export const ContactSheet = ({
     <div
       className="relative bg-black"
       style={{
-        width: maxStripWidth + 32,
+        width: maxStripWidth + 128,
         height:
           MEASUREMENTS.frameHeight * numberOfStrips +
           (numberOfStrips - 1) * 16 +
-          32,
+          128,
         minWidth: '0',
-        padding: '16px',
+        padding: '64px',
       }}
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
