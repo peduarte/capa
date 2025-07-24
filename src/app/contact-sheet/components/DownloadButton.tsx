@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { trackEvent } from 'fathom-client';
 import download from '../utils/download';
 import { FilmStock, FILM_STOCKS, Frame } from '../utils/constants';
 
@@ -41,6 +42,9 @@ export const DownloadButton = ({
 
   const handleDownload = async () => {
     if (!frameOrder.length || isDownloading) return;
+
+    // Track the download event
+    trackEvent('download');
 
     updateDownloadingState(true);
     setError(null); // Clear any previous errors

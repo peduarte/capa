@@ -19,6 +19,7 @@
     "@radix-ui/react-tooltip": "^1.2.7",
     "@radix-ui/react-visually-hidden": "^1.2.3",
     "@vercel/og": "^0.8.2",
+    "fathom-client": "^3.7.2",
     "html-to-image": "^1.11.13",
     "next": "15.4.1",
     "react": "19.1.0",
