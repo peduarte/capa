@@ -116,7 +116,13 @@ export const NegativeStrip = ({
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat',
             }}
-            onClick={() => handleFrameClick(frameNumber)}
+            onClick={event => {
+              // Don't stop propagation for sticker mode - let it bubble to ContactSheet
+              if (selectedHighlightType !== 'sticker') {
+                event.stopPropagation();
+              }
+              handleFrameClick(frameNumber);
+            }}
           >
             <div
               className="relative"
@@ -124,13 +130,6 @@ export const NegativeStrip = ({
                 width: `${MEASUREMENTS.imageWidth}px`,
                 height: `${MEASUREMENTS.imageHeight}px`,
                 backgroundColor: 'black',
-              }}
-              onClick={event => {
-                // Don't stop propagation for sticker mode - let it bubble to ContactSheet
-                if (selectedHighlightType !== 'sticker') {
-                  event.stopPropagation();
-                }
-                handleFrameClick(frameNumber);
               }}
             >
               {frame.src && (
