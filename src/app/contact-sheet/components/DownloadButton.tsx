@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { trackEvent } from 'fathom-client';
 import download from '../utils/download';
-import { FilmStock, FILM_STOCKS, Frame } from '../utils/constants';
+import { FilmStock, FILM_STOCKS, Frame, Sticker } from '../utils/constants';
 
 interface DownloadButtonProps {
   frames: Record<string, Frame>;
   frameOrder: string[];
   filmStock: FilmStock;
   rotation?: number;
+  stickers?: Sticker[];
   className?: string;
   isDemo?: boolean;
   onDownloadStateChange?: (isDownloading: boolean) => void;
@@ -18,6 +19,7 @@ export const DownloadButton = ({
   frameOrder,
   filmStock,
   rotation = 0,
+  stickers = [],
   className = '',
   isDemo = false,
   onDownloadStateChange,
@@ -136,6 +138,7 @@ export const DownloadButton = ({
           frameOrder,
           filmStock,
           rotation,
+          stickers,
         }),
       });
 

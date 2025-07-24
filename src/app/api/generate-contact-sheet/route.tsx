@@ -4,6 +4,8 @@ import {
   MEASUREMENTS,
   FilmStock,
   FILM_STOCKS,
+  Sticker,
+  STICKER_CONFIGS,
 } from '../../contact-sheet/utils/constants';
 
 // Types for the request payload
@@ -22,6 +24,7 @@ interface ContactSheetRequest {
   frameOrder: string[];
   filmStock?: FilmStock;
   rotation?: number;
+  stickers?: Sticker[];
 }
 
 export async function POST(request: NextRequest) {
@@ -51,6 +54,7 @@ export async function POST(request: NextRequest) {
       frameOrder,
       filmStock = 'ilford-hp5',
       rotation = 0,
+      stickers = [],
     } = body as ContactSheetRequest;
 
     console.log(
@@ -105,6 +109,7 @@ export async function POST(request: NextRequest) {
             filmStock={filmStock}
             rotation={rotation}
             scaleFactor={scaleFactor}
+            stickers={stickers}
           />
         </div>
       ),
@@ -126,6 +131,7 @@ function ContactSheetContent({
   filmStock,
   rotation = 0,
   scaleFactor = 1,
+  stickers = [],
 }: {
   frames: Record<string, Frame>;
   frameOrder: string[];
@@ -133,6 +139,7 @@ function ContactSheetContent({
   filmStock: FilmStock;
   rotation: number;
   scaleFactor: number;
+  stickers: Sticker[];
 }) {
   // Scale all measurements for higher resolution
   const FRAME_WIDTH = MEASUREMENTS.frameWidth * scaleFactor;
@@ -144,10 +151,12 @@ function ContactSheetContent({
   const maxFramesPerStrip = Math.min(6, frameOrder.length);
   const maxStripWidth = maxFramesPerStrip * FRAME_WIDTH;
 
-  // Calculate container dimensions
-  const baseWidth = maxStripWidth;
+  // Calculate container dimensions - match ContactSheet.tsx exactly
+  const baseWidth = maxStripWidth + 32 * scaleFactor; // 16px padding on each side
   const baseHeight =
-    numberOfStrips * FRAME_HEIGHT + (numberOfStrips - 1) * 16 * scaleFactor;
+    numberOfStrips * FRAME_HEIGHT +
+    (numberOfStrips - 1) * 16 * scaleFactor +
+    32 * scaleFactor; // 16px padding top/bottom
 
   return (
     <div
@@ -160,6 +169,7 @@ function ContactSheetContent({
         transformOrigin: 'center center',
         display: 'flex',
         flexDirection: 'column',
+        padding: 16 * scaleFactor, // 16px padding to match ContactSheet
       }}
     >
       {Array.from({ length: numberOfStrips }, (_, stripIndex) => {
@@ -191,13 +201,6 @@ function ContactSheetContent({
               const frameId = frameOrder[imageIndex];
               const frame = frames[frameId];
               const frameNumber = imageIndex + 1;
-
-              // Determine highlight type from frame data
-              const highlightType = Object.entries(frame.highlights).find(
-                ([type, isActive]) => isActive && type !== 'cross'
-              )?.[0] as 'default' | 'scribble' | 'circle' | undefined;
-
-              const isXMarked = frame.highlights.cross;
 
               return (
                 <div
@@ -323,50 +326,69 @@ function ContactSheetContent({
                     </div>
                   )}
 
-                  {/* Highlight overlay */}
-                  {highlightType && (
-                    <img
-                      src={`${baseUrl}${getHighlightImage(highlightType)}`}
-                      style={{
-                        position: 'absolute',
-                        left: 0,
-                        top: 0,
-                        width: FRAME_WIDTH,
-                        height: FRAME_HEIGHT,
-                        zIndex: 20,
-                        objectFit: 'cover',
-                      }}
-                    />
-                  )}
-
-                  {/* X mark overlay */}
-                  {isXMarked && (
-                    <img
-                      src={`${baseUrl}/frame-highlight-x.png`}
-                      style={{
-                        position: 'absolute',
-                        left: 0,
-                        top: 0,
-                        width: FRAME_WIDTH,
-                        height: FRAME_HEIGHT,
-                        zIndex: 20,
-                        objectFit: 'cover',
-                      }}
-                    />
-                  )}
+                  {/* Highlight overlays - render ALL active highlights like ContactSheet */}
+                  {Object.entries(frame.highlights)
+                    .filter(([type, isActive]) => isActive)
+                    .map(([highlight], highlightIndex) => (
+                      <img
+                        key={`${frameId}-${highlight}-${highlightIndex}`}
+                        src={`${baseUrl}${getHighlightImage(highlight as 'default' | 'scribble' | 'circle' | 'cross')}`}
+                        style={{
+                          position: 'absolute',
+                          left: 0,
+                          top: 0,
+                          width: FRAME_WIDTH,
+                          height: FRAME_HEIGHT,
+                          zIndex: 20,
+                          objectFit: 'cover',
+                          opacity: highlight === 'scribble' ? 1 : 0.9,
+                        }}
+                      />
+                    ))}
                 </div>
               );
             })}
           </div>
         );
       })}
+
+      {/* Stickers */}
+      {stickers.map((sticker, index) => {
+        const stickerConfig = STICKER_CONFIGS[sticker.type];
+        if (!stickerConfig) return null;
+
+        // Use the image path directly
+        const imagePath = stickerConfig.image;
+
+        return (
+          <img
+            key={`sticker-${index}`}
+            src={`${baseUrl}${imagePath}`}
+            style={{
+              position: 'absolute',
+              top: sticker.top * scaleFactor,
+              left: sticker.left * scaleFactor,
+              width: stickerConfig.width * scaleFactor,
+              height: stickerConfig.height * scaleFactor,
+              objectFit: 'cover',
+              zIndex: 30,
+              transform:
+                `${stickerConfig.transform || ''} rotate(${sticker.rotation}deg)`.trim(),
+              transformOrigin: 'center center',
+            }}
+          />
+        );
+      })}
     </div>
   );
 }
 
-function getHighlightImage(type: 'default' | 'scribble' | 'circle'): string {
+function getHighlightImage(
+  type: 'default' | 'scribble' | 'circle' | 'cross'
+): string {
   if (type === 'scribble') return '/frame-highlight-scribble.png';
   if (type === 'circle') return '/frame-highlight-circle.png';
+  if (type === 'cross') return '/frame-highlight-x.png';
   return '/frame-highlight-rectangle.png';
 }
 
@@ -380,12 +402,12 @@ function getContactSheetDimensions(
   const maxFramesPerStrip = Math.min(6, imageCount);
   const maxStripWidth = maxFramesPerStrip * FRAME_WIDTH;
 
-  // Base content dimensions
+  // Base content dimensions - match ContactSheet.tsx exactly
   const baseWidth = maxStripWidth;
   const baseHeight = numberOfStrips * FRAME_HEIGHT + (numberOfStrips - 1) * 16;
 
-  // Add balanced padding on all sides - reduced since outer container will center
-  const padding = 120; // 60px padding on each side for better balance
+  // Add 16px padding on all sides to match ContactSheet
+  const padding = 32; // 16px padding on each side
 
   const contentWidth = baseWidth + padding;
   const contentHeight = baseHeight + padding;

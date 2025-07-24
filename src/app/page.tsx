@@ -19,6 +19,9 @@ import {
   MEASUREMENTS,
   Frame,
   ContactSheetState,
+  Sticker,
+  StickerType,
+  STICKER_CONFIGS,
 } from './contact-sheet/utils/constants';
 import { defaultFrameData } from './contact-sheet/utils/defaultFrameData';
 
@@ -44,6 +47,10 @@ function ContactSheetPageContent() {
   const [selectedHighlightType, setSelectedHighlightType] =
     useState<string>('rectangle');
   const [rotation, setRotation] = useState<number>(0); // 0, 90, 180, 270 degrees
+  const [stickers, setStickers] = useState<Sticker[]>([]);
+  const [isDraggingSticker, setIsDraggingSticker] = useState(false);
+  const [draggingStickerIndex, setDraggingStickerIndex] = useState<number>(-1);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadedObjectUrlsRef = useRef<string[]>([]); // Track blob URLs for cleanup
 
@@ -383,6 +390,50 @@ function ContactSheetPageContent() {
     }
   }, [selectedHighlightType, isTouchDevice]);
 
+  // Sticker drag handlers
+  const handleStickerMouseDown = useCallback(
+    (stickerIndex: number, event: React.MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setIsDraggingSticker(true);
+      setDraggingStickerIndex(stickerIndex);
+
+      // Calculate offset from mouse to sticker's current position
+      const contactSheetRect =
+        loupeContactSheetRef.current?.getBoundingClientRect();
+      if (contactSheetRect && stickers[stickerIndex]) {
+        const mouseX = event.clientX - contactSheetRect.left;
+        const mouseY = event.clientY - contactSheetRect.top;
+        const sticker = stickers[stickerIndex];
+
+        setDragOffset({
+          x: mouseX - sticker.left,
+          y: mouseY - sticker.top,
+        });
+      }
+    },
+    [stickers]
+  );
+
+  const handleStickerClick = useCallback(
+    (stickerIndex: number, event: React.MouseEvent) => {
+      // Don't rotate if we're dragging
+      if (isDraggingSticker) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      setStickers(prev =>
+        prev.map((sticker, index) =>
+          index === stickerIndex
+            ? { ...sticker, rotation: (sticker.rotation + 30) % 360 }
+            : sticker
+        )
+      );
+    },
+    [isDraggingSticker]
+  );
+
   useEffect(() => {
     const handleGlobalDragOver = (e: DragEvent) => {
       e.preventDefault();
@@ -411,17 +462,74 @@ function ContactSheetPageContent() {
       }
     };
 
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      if (
+        isDraggingSticker &&
+        draggingStickerIndex >= 0 &&
+        loupeContactSheetRef.current
+      ) {
+        const contactSheetRect =
+          loupeContactSheetRef.current.getBoundingClientRect();
+        const mouseX = e.clientX - contactSheetRect.left;
+        const mouseY = e.clientY - contactSheetRect.top;
+
+        // Get the sticker config for bounds calculation
+        const currentSticker = stickers[draggingStickerIndex];
+        const stickerConfig = currentSticker
+          ? STICKER_CONFIGS[currentSticker.type]
+          : null;
+        const stickerWidth = stickerConfig?.width || 51;
+        const stickerHeight = stickerConfig?.height || 26;
+
+        // Calculate new position accounting for drag offset
+        const newLeft = Math.max(
+          0,
+          Math.min(contactSheetRect.width - stickerWidth, mouseX - dragOffset.x)
+        );
+        const newTop = Math.max(
+          0,
+          Math.min(
+            contactSheetRect.height - stickerHeight,
+            mouseY - dragOffset.y
+          )
+        );
+
+        setStickers(prev =>
+          prev.map((sticker, index) =>
+            index === draggingStickerIndex
+              ? { ...sticker, left: newLeft, top: newTop }
+              : sticker
+          )
+        );
+      }
+    };
+
+    const handleGlobalMouseUp = () => {
+      setIsDraggingSticker(false);
+      setDraggingStickerIndex(-1);
+    };
+
     // Add global event listeners - these will only be registered ONCE
     window.addEventListener('dragover', handleGlobalDragOver);
     window.addEventListener('dragleave', handleGlobalDragLeave);
     window.addEventListener('drop', handleGlobalDrop);
+    window.addEventListener('mousemove', handleGlobalMouseMove);
+    window.addEventListener('mouseup', handleGlobalMouseUp);
 
     return () => {
       window.removeEventListener('dragover', handleGlobalDragOver);
       window.removeEventListener('dragleave', handleGlobalDragLeave);
       window.removeEventListener('drop', handleGlobalDrop);
+      window.removeEventListener('mousemove', handleGlobalMouseMove);
+      window.removeEventListener('mouseup', handleGlobalMouseUp);
     };
-  }, [processFiles]); // Only depend on processFiles which is stable with useCallback
+  }, [
+    processFiles,
+    isDraggingSticker,
+    draggingStickerIndex,
+    dragOffset,
+    stickers,
+  ]); // Updated dependencies
 
   // Cleanup Object URLs when component unmounts to prevent memory leaks
   // Don't cleanup on state changes or it will revoke URLs before download
@@ -516,6 +624,7 @@ function ContactSheetPageContent() {
                 }
                 filmStock={selectedFilmStock}
                 rotation={rotation}
+                stickers={stickers}
                 isDemo={showDemo}
                 onDownloadStateChange={setIsDownloading}
               />
@@ -574,7 +683,7 @@ function ContactSheetPageContent() {
             </div>
 
             {/* Rotate Buttons */}
-            <div className="flex items-center space-x-1">
+            {/* <div className="flex items-center space-x-1">
               <Tooltip.Root>
                 <Tooltip.Trigger asChild>
                   <button
@@ -616,10 +725,10 @@ function ContactSheetPageContent() {
                   </Tooltip.Content>
                 </Tooltip.Portal>
               </Tooltip.Root>
-            </div>
+            </div> */}
 
             {/* Separator */}
-            <div className="w-px h-6 bg-gray-500"></div>
+            {/* <div className="w-px h-6 bg-gray-500"></div> */}
 
             {/* Center-Right: Highlight Type Selector */}
             <HighlightTypeSelector
@@ -627,6 +736,49 @@ function ContactSheetPageContent() {
               onTypeChange={setSelectedHighlightType}
               hideLoupeOption={isTouchDevice}
             />
+
+            {/* Separator */}
+            <div className="w-px h-6 bg-gray-500"></div>
+
+            {/* Sticker Button */}
+            <Tooltip.Root>
+              <Tooltip.Trigger asChild>
+                <button
+                  onClick={() => {
+                    if (stickers.length > 0) {
+                      setStickers([]);
+                    } else {
+                      const { id, defaultRotation, defaultTop, defaultLeft } =
+                        STICKER_CONFIGS['twin-check'];
+                      setStickers([
+                        {
+                          type: id,
+                          top: defaultTop,
+                          left: defaultLeft,
+                          rotation: defaultRotation,
+                        },
+                      ]);
+                    }
+                  }}
+                  className={`px-2 py-1 text-xs rounded hover:bg-white/20 focus:outline-none flex items-center ${
+                    stickers.length > 0
+                      ? 'bg-white/20 text-white'
+                      : 'text-white'
+                  }`}
+                >
+                  Sticker
+                </button>
+              </Tooltip.Trigger>
+              <Tooltip.Portal>
+                <Tooltip.Content
+                  className="bg-black text-white px-2 py-1 text-xs rounded border border-gray-600"
+                  sideOffset={5}
+                >
+                  Toggle sticker
+                  <Tooltip.Arrow className="fill-black" />
+                </Tooltip.Content>
+              </Tooltip.Portal>
+            </Tooltip.Root>
           </div>
         )}
 
@@ -668,7 +820,7 @@ function ContactSheetPageContent() {
           <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
             <div className="py-8 px-12">
               <div className="text-center">
-                <h3 className="text-xl font-semibold ">Geneating...</h3>
+                <h3 className="text-xl font-semibold ">Generating...</h3>
               </div>
             </div>
           </div>
@@ -720,6 +872,9 @@ function ContactSheetPageContent() {
               frameOrder={displayState.frameOrder}
               filmStock={selectedFilmStock}
               selectedHighlightType={selectedHighlightType}
+              stickers={stickers}
+              onStickerMouseDown={handleStickerMouseDown}
+              onStickerClick={handleStickerClick}
               onFrameUpdate={(frameId, updatedFrame) => {
                 // Only update if it's not an empty frame
                 if (!frameId.startsWith('empty_')) {
@@ -778,6 +933,9 @@ function ContactSheetPageContent() {
                   frameOrder={displayState.frameOrder}
                   filmStock={selectedFilmStock}
                   selectedHighlightType="" // Disable interactions in loupe
+                  stickers={stickers}
+                  onStickerMouseDown={handleStickerMouseDown}
+                  onStickerClick={handleStickerClick}
                   onFrameUpdate={() => {}} // No-op for loupe
                   onImageDelete={() => {}} // No-op for loupe
                 />

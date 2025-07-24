@@ -1,17 +1,26 @@
 import React from 'react';
 import { NegativeStrip } from './NegativeStrip';
-import { MEASUREMENTS, FilmStock, Frame } from '../utils/constants';
+import {
+  MEASUREMENTS,
+  FilmStock,
+  Frame,
+  Sticker,
+  STICKER_CONFIGS,
+} from '../utils/constants';
 
 interface ContactSheetProps {
   frames: Record<string, Frame>;
   frameOrder: string[];
   filmStock: FilmStock;
   selectedHighlightType: string;
+  stickers?: Sticker[];
   ref: React.RefObject<HTMLDivElement | null>;
   onMouseMove?: (event: React.MouseEvent) => void;
   onMouseLeave?: () => void;
   onFrameUpdate?: (frameId: string, updatedFrame: Frame) => void;
   onImageDelete?: (frameNumber: number) => void;
+  onStickerMouseDown?: (stickerIndex: number, event: React.MouseEvent) => void;
+  onStickerClick?: (stickerIndex: number, event: React.MouseEvent) => void;
 }
 
 export const ContactSheet = ({
@@ -19,11 +28,14 @@ export const ContactSheet = ({
   frameOrder,
   filmStock,
   selectedHighlightType,
+  stickers,
   ref,
   onMouseMove,
   onMouseLeave,
   onFrameUpdate,
   onImageDelete,
+  onStickerMouseDown,
+  onStickerClick,
 }: ContactSheetProps) => {
   const numberOfStrips = Math.ceil(frameOrder.length / 6);
   const maxFramesPerStrip = Math.min(6, frameOrder.length);
@@ -74,6 +86,38 @@ export const ContactSheet = ({
           />
         );
       })}
+
+      {/* Stickers */}
+      {stickers &&
+        stickers.map((sticker, index) => {
+          const stickerConfig = STICKER_CONFIGS[sticker.type];
+          if (!stickerConfig) return null;
+
+          return (
+            <div
+              key={`sticker-${index}`}
+              className="absolute select-none"
+              style={{
+                top: `${sticker.top}px`,
+                left: `${sticker.left}px`,
+                width: `${stickerConfig.width}px`,
+                height: `${stickerConfig.height}px`,
+                backgroundImage: `url(${stickerConfig.image})`,
+                backgroundSize: 'cover',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'center',
+                cursor: 'grab',
+                zIndex: 10,
+                userSelect: 'none',
+                transform:
+                  `${stickerConfig.transform || ''} rotate(${sticker.rotation}deg)`.trim(),
+                transformOrigin: 'center center',
+              }}
+              onMouseDown={event => onStickerMouseDown?.(index, event)}
+              onClick={event => onStickerClick?.(index, event)}
+            />
+          );
+        })}
     </div>
   );
 };

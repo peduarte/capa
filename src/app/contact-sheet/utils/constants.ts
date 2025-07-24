@@ -50,9 +50,43 @@ export interface Frame {
     scribble: boolean;
     cross: boolean;
   };
-  fileName?: string; // Optional original filename
-  uploadedAt?: number; // Optional timestamp
+  uploadedAt?: number;
 }
+
+export type StickerType = 'twin-check';
+
+export interface Sticker {
+  type: StickerType;
+  top: number;
+  left: number;
+  rotation: number;
+}
+
+export interface StickerConfig {
+  id: StickerType;
+  name: string;
+  image: string;
+  width: number;
+  height: number;
+  transform?: string;
+  defaultRotation: number;
+  defaultTop: number;
+  defaultLeft: number;
+}
+
+export const STICKER_CONFIGS: Record<StickerType, StickerConfig> = {
+  'twin-check': {
+    id: 'twin-check',
+    name: 'Twin Check',
+    image: '/twin-check-sticker.png',
+    width: 51,
+    height: 26,
+    transform: 'rotate(90deg)',
+    defaultRotation: 180,
+    defaultTop: MEASUREMENTS.frameHeight / 2,
+    defaultLeft: 0,
+  },
+};
 
 export interface ContactSheetState {
   frames: Record<string, Frame>;
