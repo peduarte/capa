@@ -516,6 +516,7 @@ function ContactSheetPageContent() {
                 }
                 filmStock={selectedFilmStock}
                 rotation={rotation}
+                isDemo={showDemo}
                 onDownloadStateChange={setIsDownloading}
               />
             )}

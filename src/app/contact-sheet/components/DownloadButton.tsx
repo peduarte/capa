@@ -9,6 +9,7 @@ interface DownloadButtonProps {
   filmStock: FilmStock;
   rotation?: number;
   className?: string;
+  isDemo?: boolean;
   onDownloadStateChange?: (isDownloading: boolean) => void;
 }
 
@@ -18,6 +19,7 @@ export const DownloadButton = ({
   filmStock,
   rotation = 0,
   className = '',
+  isDemo = false,
   onDownloadStateChange,
 }: DownloadButtonProps) => {
   const [isDownloading, setIsDownloading] = useState(false);
@@ -43,7 +45,8 @@ export const DownloadButton = ({
   const handleDownload = async () => {
     if (!frameOrder.length || isDownloading) return;
 
-    trackEvent(`export with film:${filmStock}`);
+    const eventName = isDemo ? `export-demo` : `export`;
+    trackEvent(`${eventName} film:${filmStock} frames:${frameOrder.length}`);
 
     updateDownloadingState(true);
     setError(null); // Clear any previous errors
