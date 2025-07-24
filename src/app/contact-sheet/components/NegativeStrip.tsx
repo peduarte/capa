@@ -39,6 +39,11 @@ export const NegativeStrip = ({
       return;
     }
 
+    // For sticker mode, let the event bubble up to ContactSheet
+    if (selectedHighlightType === 'sticker') {
+      return;
+    }
+
     if (selectedHighlightType === 'delete') {
       // Handle image deletion
       if (onImageDelete) {
@@ -121,7 +126,10 @@ export const NegativeStrip = ({
                 backgroundColor: 'black',
               }}
               onClick={event => {
-                event.stopPropagation();
+                // Don't stop propagation for sticker mode - let it bubble to ContactSheet
+                if (selectedHighlightType !== 'sticker') {
+                  event.stopPropagation();
+                }
                 handleFrameClick(frameNumber);
               }}
             >

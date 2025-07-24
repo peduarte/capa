@@ -736,49 +736,6 @@ function ContactSheetPageContent() {
               onTypeChange={setSelectedHighlightType}
               hideLoupeOption={isTouchDevice}
             />
-
-            {/* Separator */}
-            <div className="w-px h-6 bg-gray-500"></div>
-
-            {/* Sticker Button */}
-            <Tooltip.Root>
-              <Tooltip.Trigger asChild>
-                <button
-                  onClick={() => {
-                    if (stickers.length > 0) {
-                      setStickers([]);
-                    } else {
-                      const { id, defaultRotation, defaultTop, defaultLeft } =
-                        STICKER_CONFIGS['twin-check'];
-                      setStickers([
-                        {
-                          type: id,
-                          top: defaultTop,
-                          left: defaultLeft,
-                          rotation: defaultRotation,
-                        },
-                      ]);
-                    }
-                  }}
-                  className={`px-2 py-1 text-xs rounded hover:bg-white/20 focus:outline-none flex items-center ${
-                    stickers.length > 0
-                      ? 'bg-white/20 text-white'
-                      : 'text-white'
-                  }`}
-                >
-                  Sticker
-                </button>
-              </Tooltip.Trigger>
-              <Tooltip.Portal>
-                <Tooltip.Content
-                  className="bg-black text-white px-2 py-1 text-xs rounded border border-gray-600"
-                  sideOffset={5}
-                >
-                  Toggle sticker
-                  <Tooltip.Arrow className="fill-black" />
-                </Tooltip.Content>
-              </Tooltip.Portal>
-            </Tooltip.Root>
           </div>
         )}
 
@@ -875,6 +832,7 @@ function ContactSheetPageContent() {
               stickers={stickers}
               onStickerMouseDown={handleStickerMouseDown}
               onStickerClick={handleStickerClick}
+              onStickerUpdate={setStickers}
               onFrameUpdate={(frameId, updatedFrame) => {
                 // Only update if it's not an empty frame
                 if (!frameId.startsWith('empty_')) {
@@ -936,6 +894,7 @@ function ContactSheetPageContent() {
                   stickers={stickers}
                   onStickerMouseDown={handleStickerMouseDown}
                   onStickerClick={handleStickerClick}
+                  onStickerUpdate={() => {}} // No-op for loupe
                   onFrameUpdate={() => {}} // No-op for loupe
                   onImageDelete={() => {}} // No-op for loupe
                 />

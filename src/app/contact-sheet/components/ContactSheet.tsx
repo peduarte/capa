@@ -21,6 +21,7 @@ interface ContactSheetProps {
   onImageDelete?: (frameNumber: number) => void;
   onStickerMouseDown?: (stickerIndex: number, event: React.MouseEvent) => void;
   onStickerClick?: (stickerIndex: number, event: React.MouseEvent) => void;
+  onStickerUpdate?: (stickers: Sticker[]) => void;
 }
 
 export const ContactSheet = ({
@@ -36,10 +37,49 @@ export const ContactSheet = ({
   onImageDelete,
   onStickerMouseDown,
   onStickerClick,
+  onStickerUpdate,
 }: ContactSheetProps) => {
   const numberOfStrips = Math.ceil(frameOrder.length / 6);
   const maxFramesPerStrip = Math.min(6, frameOrder.length);
   const maxStripWidth = maxFramesPerStrip * MEASUREMENTS.frameWidth;
+
+  const handleContactSheetClick = (event: React.MouseEvent) => {
+    if (selectedHighlightType === 'sticker' && onStickerUpdate) {
+      // Calculate click position relative to the contact sheet
+      const rect = event.currentTarget.getBoundingClientRect();
+      const clickX = event.clientX - rect.left;
+      const clickY = event.clientY - rect.top;
+
+      // Get sticker config for placement
+      const { id, defaultRotation } = STICKER_CONFIGS['twin-check'];
+      const stickerConfig = STICKER_CONFIGS['twin-check'];
+
+      // Position sticker at click location, accounting for sticker size
+      const stickerLeft = Math.max(
+        0,
+        Math.min(
+          rect.width - stickerConfig.width,
+          clickX - stickerConfig.width / 2
+        )
+      );
+      const stickerTop = Math.max(
+        0,
+        Math.min(
+          rect.height - stickerConfig.height,
+          clickY - stickerConfig.height / 2
+        )
+      );
+
+      const newSticker: Sticker = {
+        type: id,
+        top: stickerTop,
+        left: stickerLeft,
+        rotation: defaultRotation,
+      };
+
+      onStickerUpdate([...(stickers || []), newSticker]);
+    }
+  };
 
   return (
     <div
@@ -55,6 +95,7 @@ export const ContactSheet = ({
       }}
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
+      onClick={handleContactSheetClick}
     >
       {/* Forward the original ref to the first child for download functionality */}
       <div ref={ref} className="absolute inset-0 pointer-events-none" />

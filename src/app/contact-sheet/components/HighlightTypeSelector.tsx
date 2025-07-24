@@ -8,6 +8,7 @@ import {
   Cross1Icon,
   MagnifyingGlassIcon,
   TrashIcon,
+  IdCardIcon,
 } from '@radix-ui/react-icons';
 
 interface HighlightTypeSelectorProps {
@@ -87,6 +88,15 @@ export const HighlightTypeSelector = ({
             className="px-2 py-1 text-xs text-white hover:bg-white/20 focus:outline-none aria-checked:bg-white aria-checked:text-black aria-checked:hover:bg-white rounded flex items-center"
           >
             <Cross1Icon className="w-4 h-4" />
+          </ToggleGroup.Item>
+        </TooltipWrapper>
+
+        <TooltipWrapper content="Sticker">
+          <ToggleGroup.Item
+            value="sticker"
+            className="px-2 py-1 text-xs text-white hover:bg-white/20 focus:outline-none aria-checked:bg-white aria-checked:text-black aria-checked:hover:bg-white rounded flex items-center"
+          >
+            <IdCardIcon className="w-4 h-4" />
           </ToggleGroup.Item>
         </TooltipWrapper>
 
