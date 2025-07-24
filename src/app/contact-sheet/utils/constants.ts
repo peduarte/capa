@@ -53,7 +53,7 @@ export interface Frame {
   uploadedAt?: number;
 }
 
-export type StickerType = 'twin-check';
+export type StickerType = 'twin-check' | 'dot';
 
 export interface Sticker {
   type: StickerType;
@@ -76,12 +76,21 @@ export const STICKER_CONFIGS: Record<StickerType, StickerConfig> = {
   'twin-check': {
     id: 'twin-check',
     name: 'Twin Check',
-    image: '/twin-check-sticker.png',
+    image: '/sticker-twin-check.png',
     width: 51,
     height: 26,
     transform: 'rotate(90deg)',
     defaultTop: MEASUREMENTS.frameHeight / 2,
     defaultLeft: 0,
+  },
+  dot: {
+    id: 'dot',
+    name: 'Dot',
+    image: '/sticker-dot.png',
+    width: 26,
+    height: 26,
+    defaultTop: MEASUREMENTS.frameHeight / 2,
+    defaultLeft: MEASUREMENTS.frameWidth / 2,
   },
 };
 

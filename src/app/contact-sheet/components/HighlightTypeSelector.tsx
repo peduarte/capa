@@ -9,6 +9,7 @@ import {
   MagnifyingGlassIcon,
   TrashIcon,
   IdCardIcon,
+  ShadowOuterIcon,
 } from '@radix-ui/react-icons';
 
 interface HighlightTypeSelectorProps {
@@ -91,12 +92,21 @@ export const HighlightTypeSelector = ({
           </ToggleGroup.Item>
         </TooltipWrapper>
 
-        <TooltipWrapper content="Sticker">
+        <TooltipWrapper content="Twin Check Sticker">
           <ToggleGroup.Item
-            value="sticker"
+            value="sticker-twin-check"
             className="px-2 py-1 text-xs text-white hover:bg-white/20 focus:outline-none aria-checked:bg-white aria-checked:text-black aria-checked:hover:bg-white rounded flex items-center"
           >
             <IdCardIcon className="w-4 h-4" />
+          </ToggleGroup.Item>
+        </TooltipWrapper>
+
+        <TooltipWrapper content="Dot Sticker">
+          <ToggleGroup.Item
+            value="sticker-dot"
+            className="px-2 py-1 text-xs text-white hover:bg-white/20 focus:outline-none aria-checked:bg-white aria-checked:text-black aria-checked:hover:bg-white rounded flex items-center"
+          >
+            <ShadowOuterIcon className="w-4 h-4" />
           </ToggleGroup.Item>
         </TooltipWrapper>
 

@@ -40,7 +40,7 @@ export const NegativeStrip = ({
     }
 
     // For sticker mode, let the event bubble up to ContactSheet
-    if (selectedHighlightType === 'sticker') {
+    if (selectedHighlightType.startsWith('sticker-')) {
       return;
     }
 
@@ -118,7 +118,7 @@ export const NegativeStrip = ({
             }}
             onClick={event => {
               // Don't stop propagation for sticker mode - let it bubble to ContactSheet
-              if (selectedHighlightType !== 'sticker') {
+              if (!selectedHighlightType.startsWith('sticker-')) {
                 event.stopPropagation();
               }
               handleFrameClick(frameNumber);

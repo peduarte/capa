@@ -6,6 +6,7 @@ import {
   Frame,
   Sticker,
   STICKER_CONFIGS,
+  StickerType,
 } from '../utils/constants';
 
 interface ContactSheetProps {
@@ -42,15 +43,19 @@ export const ContactSheet = ({
   const maxStripWidth = maxFramesPerStrip * MEASUREMENTS.frameWidth;
 
   const handleContactSheetMouseDown = (event: React.MouseEvent) => {
-    if (selectedHighlightType === 'sticker' && onStickerUpdate) {
+    // Check if it's a sticker mode
+    if (selectedHighlightType.startsWith('sticker-') && onStickerUpdate) {
       // Calculate click position relative to the contact sheet
       const rect = event.currentTarget.getBoundingClientRect();
       const clickX = event.clientX - rect.left;
       const clickY = event.clientY - rect.top;
 
-      // Get sticker config for placement
-      const { id } = STICKER_CONFIGS['twin-check'];
-      const stickerConfig = STICKER_CONFIGS['twin-check'];
+      // Extract sticker type from selectedHighlightType (e.g., "sticker-dot" -> "dot")
+      const stickerType = selectedHighlightType.replace(
+        'sticker-',
+        ''
+      ) as StickerType;
+      const stickerConfig = STICKER_CONFIGS[stickerType];
 
       // Position sticker at click location, accounting for sticker size
       const stickerLeft = Math.max(
@@ -69,7 +74,7 @@ export const ContactSheet = ({
       );
 
       const newSticker: Sticker = {
-        type: id,
+        type: stickerType,
         top: stickerTop,
         left: stickerLeft,
       };

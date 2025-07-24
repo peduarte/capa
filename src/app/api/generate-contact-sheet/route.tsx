@@ -6,6 +6,7 @@ import {
   FILM_STOCKS,
   Sticker,
   STICKER_CONFIGS,
+  StickerType,
 } from '../../contact-sheet/utils/constants';
 
 // Types for the request payload
