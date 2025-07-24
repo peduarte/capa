@@ -6,7 +6,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 
 import { ContactSheet } from './contact-sheet/components/ContactSheet';
 import { DownloadButton } from './contact-sheet/components/DownloadButton';
-import { HighlightTypeSelector } from './contact-sheet/components/HighlightTypeSelector';
+import { Toolbar } from './contact-sheet/components/Toolbar';
 import {
   convertFilesToCompressedObjectUrls,
   getValidImages,
@@ -701,7 +701,7 @@ function ContactSheetPageContent() {
             {/* <div className="w-px h-6 bg-gray-500"></div> */}
 
             {/* Center-Right: Highlight Type Selector */}
-            <HighlightTypeSelector
+            <Toolbar
               selectedType={selectedHighlightType}
               onTypeChange={setSelectedHighlightType}
               hideLoupeOption={isTouchDevice}

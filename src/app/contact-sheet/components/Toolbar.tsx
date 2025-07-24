@@ -12,7 +12,7 @@ import {
   ShadowOuterIcon,
 } from '@radix-ui/react-icons';
 
-interface HighlightTypeSelectorProps {
+interface ToolbarProps {
   selectedType: string;
   onTypeChange: (type: string) => void;
   hideLoupeOption?: boolean;
@@ -41,11 +41,11 @@ function TooltipWrapper({
   );
 }
 
-export const HighlightTypeSelector = ({
+export const Toolbar = ({
   selectedType,
   onTypeChange,
   hideLoupeOption = false,
-}: HighlightTypeSelectorProps) => {
+}: ToolbarProps) => {
   return (
     <div className="flex items-center space-x-2 text-sm">
       <ToggleGroup.Root
