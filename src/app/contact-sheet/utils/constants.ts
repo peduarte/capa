@@ -59,7 +59,6 @@ export interface Sticker {
   type: StickerType;
   top: number;
   left: number;
-  rotation: number;
 }
 
 export interface StickerConfig {
@@ -69,7 +68,6 @@ export interface StickerConfig {
   width: number;
   height: number;
   transform?: string;
-  defaultRotation: number;
   defaultTop: number;
   defaultLeft: number;
 }
@@ -82,7 +80,6 @@ export const STICKER_CONFIGS: Record<StickerType, StickerConfig> = {
     width: 51,
     height: 26,
     transform: 'rotate(90deg)',
-    defaultRotation: 180,
     defaultTop: MEASUREMENTS.frameHeight / 2,
     defaultLeft: 0,
   },

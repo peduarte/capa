@@ -20,7 +20,6 @@ interface ContactSheetProps {
   onFrameUpdate?: (frameId: string, updatedFrame: Frame) => void;
   onImageDelete?: (frameNumber: number) => void;
   onStickerMouseDown?: (stickerIndex: number, event: React.MouseEvent) => void;
-  onStickerClick?: (stickerIndex: number, event: React.MouseEvent) => void;
   onStickerUpdate?: (stickers: Sticker[]) => void;
 }
 
@@ -36,7 +35,6 @@ export const ContactSheet = ({
   onFrameUpdate,
   onImageDelete,
   onStickerMouseDown,
-  onStickerClick,
   onStickerUpdate,
 }: ContactSheetProps) => {
   const numberOfStrips = Math.ceil(frameOrder.length / 6);
@@ -51,7 +49,7 @@ export const ContactSheet = ({
       const clickY = event.clientY - rect.top;
 
       // Get sticker config for placement
-      const { id, defaultRotation } = STICKER_CONFIGS['twin-check'];
+      const { id } = STICKER_CONFIGS['twin-check'];
       const stickerConfig = STICKER_CONFIGS['twin-check'];
 
       // Position sticker at click location, accounting for sticker size
@@ -74,7 +72,6 @@ export const ContactSheet = ({
         type: id,
         top: stickerTop,
         left: stickerLeft,
-        rotation: defaultRotation,
       };
 
       onStickerUpdate([...(stickers || []), newSticker]);
@@ -150,12 +147,10 @@ export const ContactSheet = ({
                 cursor: 'grab',
                 zIndex: 10,
                 userSelect: 'none',
-                transform:
-                  `${stickerConfig.transform || ''} rotate(${sticker.rotation}deg)`.trim(),
+                transform: stickerConfig.transform || '',
                 transformOrigin: 'center center',
               }}
               onMouseDown={event => onStickerMouseDown?.(index, event)}
-              onClick={event => onStickerClick?.(index, event)}
             />
           );
         })}

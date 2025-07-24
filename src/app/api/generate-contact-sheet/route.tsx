@@ -372,8 +372,7 @@ function ContactSheetContent({
               height: stickerConfig.height * scaleFactor,
               objectFit: 'cover',
               zIndex: 30,
-              transform:
-                `${stickerConfig.transform || ''} rotate(${sticker.rotation}deg)`.trim(),
+              transform: stickerConfig.transform || '',
               transformOrigin: 'center center',
             }}
           />

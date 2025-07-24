@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import * as Select from '@radix-ui/react-select';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import { RotateCounterClockwiseIcon } from '@radix-ui/react-icons';
+
 import { ContactSheet } from './contact-sheet/components/ContactSheet';
 import { DownloadButton } from './contact-sheet/components/DownloadButton';
 import { HighlightTypeSelector } from './contact-sheet/components/HighlightTypeSelector';
@@ -20,7 +20,6 @@ import {
   Frame,
   ContactSheetState,
   Sticker,
-  StickerType,
   STICKER_CONFIGS,
 } from './contact-sheet/utils/constants';
 import { defaultFrameData } from './contact-sheet/utils/defaultFrameData';
@@ -205,16 +204,6 @@ function ContactSheetPageContent() {
 
   // Use uploaded images if available, otherwise demo images if enabled, otherwise empty frames
   const currentImages = getCurrentImages();
-
-  // Rotate contact sheet left (counter-clockwise)
-  const rotateContactSheetLeft = useCallback(() => {
-    setRotation(prev => (prev - 30 + 360) % 360);
-  }, []);
-
-  // Rotate contact sheet right (clockwise)
-  const rotateContactSheetRight = useCallback(() => {
-    setRotation(prev => (prev + 30) % 360);
-  }, []);
 
   // Clear contact sheet back to empty frames
   const clearContactSheet = useCallback(() => {
@@ -413,25 +402,6 @@ function ContactSheetPageContent() {
       }
     },
     [stickers]
-  );
-
-  const handleStickerClick = useCallback(
-    (stickerIndex: number, event: React.MouseEvent) => {
-      // Don't rotate if we're dragging
-      if (isDraggingSticker) return;
-
-      event.preventDefault();
-      event.stopPropagation();
-
-      setStickers(prev =>
-        prev.map((sticker, index) =>
-          index === stickerIndex
-            ? { ...sticker, rotation: (sticker.rotation + 30) % 360 }
-            : sticker
-        )
-      );
-    },
-    [isDraggingSticker]
   );
 
   useEffect(() => {
@@ -831,7 +801,6 @@ function ContactSheetPageContent() {
               selectedHighlightType={selectedHighlightType}
               stickers={stickers}
               onStickerMouseDown={handleStickerMouseDown}
-              onStickerClick={handleStickerClick}
               onStickerUpdate={setStickers}
               onFrameUpdate={(frameId, updatedFrame) => {
                 // Only update if it's not an empty frame
@@ -893,7 +862,6 @@ function ContactSheetPageContent() {
                   selectedHighlightType="" // Disable interactions in loupe
                   stickers={stickers}
                   onStickerMouseDown={handleStickerMouseDown}
-                  onStickerClick={handleStickerClick}
                   onStickerUpdate={() => {}} // No-op for loupe
                   onFrameUpdate={() => {}} // No-op for loupe
                   onImageDelete={() => {}} // No-op for loupe
