@@ -44,7 +44,7 @@ export const DownloadButton = ({
     if (!frameOrder.length || isDownloading) return;
 
     // Track the download event
-    trackEvent('download');
+    trackEvent('export');
 
     updateDownloadingState(true);
     setError(null); // Clear any previous errors
