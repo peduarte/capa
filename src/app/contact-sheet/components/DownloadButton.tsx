@@ -199,7 +199,7 @@ export const DownloadButton = ({
       {/* Error tooltip */}
       {error && (
         <div
-          className="absolute bottom-full right-0 mb-2 p-3 bg-red-600 text-white text-sm rounded shadow-lg max-w-xs z-50 cursor-pointer"
+          className="absolute top-full right-0 mb-2 p-3 bg-red-600 text-white text-sm rounded shadow-lg max-w-xs z-50 cursor-pointer"
           onClick={dismissError}
           title="Click to dismiss"
         >
@@ -210,7 +210,6 @@ export const DownloadButton = ({
           <div className="text-xs mt-1 opacity-75">
             (Auto-dismisses in 8 seconds)
           </div>
-          <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-red-600" />
         </div>
       )}
     </div>
