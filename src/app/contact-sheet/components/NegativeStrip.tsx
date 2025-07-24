@@ -34,16 +34,6 @@ export const NegativeStrip = ({
   const stripWidth = framesInStrip * MEASUREMENTS.frameWidth;
 
   const handleFrameClick = (frameNumber: number) => {
-    // Do nothing if no highlight type is selected or if loupe is selected
-    if (!selectedHighlightType || selectedHighlightType === 'loupe') {
-      return;
-    }
-
-    // For sticker mode, let the event bubble up to ContactSheet
-    if (selectedHighlightType.startsWith('sticker-')) {
-      return;
-    }
-
     if (selectedHighlightType === 'delete') {
       // Handle image deletion
       if (onImageDelete) {
@@ -117,10 +107,18 @@ export const NegativeStrip = ({
               backgroundRepeat: 'no-repeat',
             }}
             onClick={event => {
-              // Don't stop propagation for sticker mode - let it bubble to ContactSheet
-              if (!selectedHighlightType.startsWith('sticker-')) {
-                event.stopPropagation();
+              // Do nothing if no highlight type is selected or if loupe is selected
+              if (!selectedHighlightType || selectedHighlightType === 'loupe') {
+                return;
               }
+
+              // For sticker mode, let the event bubble up to ContactSheet (don't process or stop propagation)
+              if (selectedHighlightType.startsWith('sticker-')) {
+                return;
+              }
+
+              // For non-sticker modes, stop propagation and handle the click
+              event.stopPropagation();
               handleFrameClick(frameNumber);
             }}
           >
