@@ -5,7 +5,7 @@ export const defaultFrameData: ContactSheetState = {
     a7f8c2e9: {
       src: 'frame-1.jpeg',
       highlights: {
-        default: true,
+        rectangle: true,
         circle: false,
         scribble: false,
         cross: false,
@@ -14,7 +14,7 @@ export const defaultFrameData: ContactSheetState = {
     b3d9f1a4: {
       src: 'frame-2.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: false,
@@ -23,7 +23,7 @@ export const defaultFrameData: ContactSheetState = {
     c8e5b7f2: {
       src: 'frame-3.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: false,
@@ -32,7 +32,7 @@ export const defaultFrameData: ContactSheetState = {
     d4a6c9e1: {
       src: 'frame-4.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: false,
@@ -41,7 +41,7 @@ export const defaultFrameData: ContactSheetState = {
     e9f2b8c5: {
       src: 'frame-5.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: false,
@@ -50,7 +50,7 @@ export const defaultFrameData: ContactSheetState = {
     f1c7d4a8: {
       src: 'frame-6.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: true,
@@ -59,7 +59,7 @@ export const defaultFrameData: ContactSheetState = {
     g6e3b9f1: {
       src: 'frame-7.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: false,
@@ -68,7 +68,7 @@ export const defaultFrameData: ContactSheetState = {
     h2a8f5c9: {
       src: 'frame-8.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: true,
         cross: false,
@@ -77,7 +77,7 @@ export const defaultFrameData: ContactSheetState = {
     i7d4b2e8: {
       src: 'frame-9.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: false,
@@ -86,7 +86,7 @@ export const defaultFrameData: ContactSheetState = {
     j3f9c6a1: {
       src: 'frame-10.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: false,
@@ -95,7 +95,7 @@ export const defaultFrameData: ContactSheetState = {
     k8b5e2f7: {
       src: 'frame-11.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: true,
         scribble: false,
         cross: false,
@@ -104,7 +104,7 @@ export const defaultFrameData: ContactSheetState = {
     l4c1a9d6: {
       src: 'frame-12.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: true,
         cross: false,
@@ -113,7 +113,7 @@ export const defaultFrameData: ContactSheetState = {
     m9e7f3b8: {
       src: 'frame-13.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: false,
@@ -122,7 +122,7 @@ export const defaultFrameData: ContactSheetState = {
     n5a4c8f2: {
       src: 'frame-14.jpeg',
       highlights: {
-        default: true,
+        rectangle: true,
         circle: false,
         scribble: false,
         cross: false,
@@ -131,7 +131,7 @@ export const defaultFrameData: ContactSheetState = {
     o1d6b9e5: {
       src: 'frame-15.jpeg',
       highlights: {
-        default: true,
+        rectangle: true,
         circle: false,
         scribble: false,
         cross: false,
@@ -140,7 +140,7 @@ export const defaultFrameData: ContactSheetState = {
     p7f2c4a1: {
       src: 'frame-16.jpeg',
       highlights: {
-        default: true,
+        rectangle: true,
         circle: false,
         scribble: false,
         cross: false,
@@ -149,7 +149,7 @@ export const defaultFrameData: ContactSheetState = {
     q3b8e6d9: {
       src: 'frame-17.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: false,
@@ -158,7 +158,7 @@ export const defaultFrameData: ContactSheetState = {
     r8c5f1a7: {
       src: 'frame-18.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: false,
@@ -167,7 +167,7 @@ export const defaultFrameData: ContactSheetState = {
     s4e9b3d6: {
       src: 'frame-19.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: false,
@@ -176,7 +176,7 @@ export const defaultFrameData: ContactSheetState = {
     t9a2f8c4: {
       src: 'frame-20.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: true,
         cross: false,
@@ -185,7 +185,7 @@ export const defaultFrameData: ContactSheetState = {
     u5d7b1e9: {
       src: 'frame-21.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: false,
@@ -194,7 +194,7 @@ export const defaultFrameData: ContactSheetState = {
     v1f4c7a3: {
       src: 'frame-22.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: false,
@@ -203,7 +203,7 @@ export const defaultFrameData: ContactSheetState = {
     w6b9e5d2: {
       src: 'frame-23.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: false,
@@ -212,7 +212,7 @@ export const defaultFrameData: ContactSheetState = {
     x2c8f6a9: {
       src: 'frame-24.jpeg',
       highlights: {
-        default: true,
+        rectangle: true,
         circle: false,
         scribble: false,
         cross: false,
@@ -221,7 +221,7 @@ export const defaultFrameData: ContactSheetState = {
     y7e3d1b5: {
       src: 'frame-25.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: false,
@@ -230,7 +230,7 @@ export const defaultFrameData: ContactSheetState = {
     z3a7f4c8: {
       src: 'frame-26.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: false,
@@ -239,7 +239,7 @@ export const defaultFrameData: ContactSheetState = {
     aa8d2b6e: {
       src: 'frame-27.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: true,
         scribble: false,
         cross: false,
@@ -248,7 +248,7 @@ export const defaultFrameData: ContactSheetState = {
     bb4f9c1a: {
       src: 'frame-28.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: false,
@@ -257,7 +257,7 @@ export const defaultFrameData: ContactSheetState = {
     cc9b5e8d: {
       src: 'frame-29.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: false,
@@ -266,7 +266,7 @@ export const defaultFrameData: ContactSheetState = {
     dd5c1f7a: {
       src: 'frame-30.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: false,
@@ -275,7 +275,7 @@ export const defaultFrameData: ContactSheetState = {
     ee1a8d4b: {
       src: 'frame-31.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: true,
@@ -284,7 +284,7 @@ export const defaultFrameData: ContactSheetState = {
     ff6e3c9f: {
       src: 'frame-32.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: false,
@@ -293,7 +293,7 @@ export const defaultFrameData: ContactSheetState = {
     gg2b7a5d: {
       src: 'frame-33.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: false,
@@ -302,7 +302,7 @@ export const defaultFrameData: ContactSheetState = {
     hh7f4e1c: {
       src: 'frame-34.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: true,
@@ -311,7 +311,7 @@ export const defaultFrameData: ContactSheetState = {
     ii3d9b6a: {
       src: 'frame-35.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: true,
         scribble: false,
         cross: false,
@@ -320,7 +320,7 @@ export const defaultFrameData: ContactSheetState = {
     jj8c2f5e: {
       src: 'frame-36.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: false,
@@ -329,7 +329,7 @@ export const defaultFrameData: ContactSheetState = {
     kk4a6d9b: {
       src: 'frame-37.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: false,
@@ -338,7 +338,7 @@ export const defaultFrameData: ContactSheetState = {
     ll9e1c8f: {
       src: 'frame-38.jpeg',
       highlights: {
-        default: false,
+        rectangle: false,
         circle: false,
         scribble: false,
         cross: false,

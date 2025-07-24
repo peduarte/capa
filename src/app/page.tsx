@@ -175,7 +175,7 @@ function ContactSheetPageContent() {
       frames[id] = {
         src: '',
         highlights: {
-          default: false,
+          rectangle: false,
           circle: false,
           scribble: false,
           cross: false,
@@ -266,7 +266,7 @@ function ContactSheetPageContent() {
             newFrames[id] = {
               src,
               highlights: {
-                default: false,
+                rectangle: false,
                 circle: false,
                 scribble: false,
                 cross: false,

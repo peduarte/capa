@@ -13,7 +13,7 @@ import {
 interface Frame {
   src: string;
   highlights: {
-    default: boolean;
+    rectangle: boolean;
     circle: boolean;
     scribble: boolean;
     cross: boolean;

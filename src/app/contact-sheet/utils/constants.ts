@@ -45,7 +45,7 @@ export const FILM_STOCKS: Record<FilmStock, FilmStockConfig> = {
 export interface Frame {
   src: string;
   highlights: {
-    default: boolean;
+    rectangle: boolean;
     circle: boolean;
     scribble: boolean;
     cross: boolean;
