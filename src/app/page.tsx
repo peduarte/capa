@@ -44,7 +44,7 @@ function ContactSheetPageContent() {
   const [selectedFilmStock, setSelectedFilmStock] =
     useState<FilmStock>('ilford-hp5');
   const [selectedToolbarAction, setSelectedToolbarAction] =
-    useState<string>('rectangle');
+    useState<string>('');
   const [rotation, setRotation] = useState<number>(0); // 0, 90, 180, 270 degrees
   const [stickers, setStickers] = useState<Sticker[]>([]);
   const [isDraggingSticker, setIsDraggingSticker] = useState(false);
@@ -823,7 +823,7 @@ function ContactSheetPageContent() {
               cursor:
                 selectedToolbarAction === 'loupe' && !isTouchDevice
                   ? `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='${loupeSize}' height='${loupeSize}' viewBox='0 0 ${loupeSize} ${loupeSize}'%3E%3Ccircle cx='${loupeSize / 2}' cy='${loupeSize / 2}' r='${loupeSize / 2 - 2}' fill='none' stroke='%23ffffff' stroke-width='2' opacity='0.8'/%3E%3C/svg%3E") ${loupeSize / 2} ${loupeSize / 2}, auto`
-                  : selectedToolbarAction === 'delete'
+                  : selectedToolbarAction && selectedToolbarAction !== 'loupe'
                     ? 'crosshair'
                     : 'default',
               transform: `rotate(${rotation}deg)`,
