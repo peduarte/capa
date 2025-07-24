@@ -50,6 +50,7 @@ function ContactSheetPageContent() {
   const [isDraggingSticker, setIsDraggingSticker] = useState(false);
   const [draggingStickerIndex, setDraggingStickerIndex] = useState<number>(-1);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [dragStartPosition, setDragStartPosition] = useState({ x: 0, y: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadedObjectUrlsRef = useRef<string[]>([]); // Track blob URLs for cleanup
 
@@ -384,13 +385,20 @@ function ContactSheetPageContent() {
     (stickerIndex: number, event: React.MouseEvent) => {
       event.preventDefault();
       event.stopPropagation();
+
       setIsDraggingSticker(true);
       setDraggingStickerIndex(stickerIndex);
 
-      // Calculate offset from mouse to sticker's current position
+      // Store the initial position of the sticker being dragged
       const contactSheetRect =
         loupeContactSheetRef.current?.getBoundingClientRect();
       if (contactSheetRect && stickers[stickerIndex]) {
+        setDragStartPosition({
+          x: stickers[stickerIndex].left,
+          y: stickers[stickerIndex].top,
+        });
+
+        // Calculate offset from mouse to sticker's current position
         const mouseX = event.clientX - contactSheetRect.left;
         const mouseY = event.clientY - contactSheetRect.top;
         const sticker = stickers[stickerIndex];
@@ -475,6 +483,32 @@ function ContactSheetPageContent() {
     };
 
     const handleGlobalMouseUp = () => {
+      // Check for sticker deletion before resetting drag state
+      if (
+        isDraggingSticker &&
+        draggingStickerIndex >= 0 &&
+        selectedToolbarAction.startsWith('sticker-')
+      ) {
+        const currentSticker = stickers[draggingStickerIndex];
+        const selectedStickerType = selectedToolbarAction.replace(
+          'sticker-',
+          ''
+        );
+
+        // Check if the sticker didn't move (within a small tolerance) and types match
+        const tolerance = 2; // pixels
+        const didNotMove =
+          Math.abs(currentSticker.left - dragStartPosition.x) < tolerance &&
+          Math.abs(currentSticker.top - dragStartPosition.y) < tolerance;
+
+        if (didNotMove && currentSticker.type === selectedStickerType) {
+          // Delete the sticker
+          setStickers(prev =>
+            prev.filter((_, index) => index !== draggingStickerIndex)
+          );
+        }
+      }
+
       setIsDraggingSticker(false);
       setDraggingStickerIndex(-1);
     };
@@ -499,6 +533,8 @@ function ContactSheetPageContent() {
     draggingStickerIndex,
     dragOffset,
     stickers,
+    dragStartPosition,
+    selectedToolbarAction,
   ]); // Updated dependencies
 
   // Cleanup Object URLs when component unmounts to prevent memory leaks
