@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Permanent_Marker } from 'next/font/google';
+import { Permanent_Marker, Rock_Salt } from 'next/font/google';
 import './globals.css';
 import Fathom from './fathom';
 
@@ -8,6 +8,13 @@ const permanentMarker = Permanent_Marker({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-permanent-marker',
+});
+
+const rockSalt = Rock_Salt({
+  weight: '400',
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-rock-salt',
 });
 
 export const metadata: Metadata = {
@@ -22,7 +29,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`antialiased ${permanentMarker.variable}`}>
+      <body
+        className={`antialiased ${permanentMarker.variable} ${rockSalt.variable}`}
+      >
         <Fathom />
         {children}
       </body>

@@ -25,6 +25,10 @@ body {
   font-family: var(--font-permanent-marker), cursive;
 }
 
+.font-rock-salt {
+  font-family: var(--font-rock-salt), cursive;
+}
+
 radix-portal > div {
   z-index: 10;
 }
