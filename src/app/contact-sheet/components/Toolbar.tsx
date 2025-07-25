@@ -38,6 +38,7 @@ function TooltipWrapper({
         <Tooltip.Content
           className="bg-black text-white px-2 py-1 text-xs rounded border border-gray-600"
           sideOffset={5}
+          data-toolbar="true"
         >
           {content}
         </Tooltip.Content>
@@ -95,11 +96,13 @@ export const Toolbar = ({
       onValueChange={value => {
         onActionChange(value || '');
       }}
+      data-toolbar="true"
     >
       <TooltipWrapper content="Rectangle (R)">
         <ToggleGroup.Item
           value="rectangle"
           className="px-2 py-1 text-xs text-white hover:bg-white/20 focus:outline-none aria-checked:bg-white aria-checked:text-black aria-checked:hover:bg-white rounded flex items-center"
+          data-toolbar="true"
         >
           <ActionRectangleIcon className="h-4" />
         </ToggleGroup.Item>
@@ -109,6 +112,7 @@ export const Toolbar = ({
         <ToggleGroup.Item
           value="circle"
           className="px-2 py-1 text-xs text-white hover:bg-white/20 focus:outline-none aria-checked:bg-white aria-checked:text-black aria-checked:hover:bg-white rounded flex items-center"
+          data-toolbar="true"
         >
           <ActionCircleIcon className="h-4" />
         </ToggleGroup.Item>
@@ -118,6 +122,7 @@ export const Toolbar = ({
         <ToggleGroup.Item
           value="scribble"
           className="px-2 py-1 text-xs text-white hover:bg-white/20 focus:outline-none aria-checked:bg-white aria-checked:text-black aria-checked:hover:bg-white rounded flex items-center"
+          data-toolbar="true"
         >
           <ActionScribbleIcon className="h-4" />
         </ToggleGroup.Item>
@@ -127,6 +132,7 @@ export const Toolbar = ({
         <ToggleGroup.Item
           value="cross"
           className="px-2 py-1 text-xs text-white hover:bg-white/20 focus:outline-none aria-checked:bg-white aria-checked:text-black aria-checked:hover:bg-white rounded flex items-center"
+          data-toolbar="true"
         >
           <ActionCrossIcon className="h-4" />
         </ToggleGroup.Item>
@@ -138,6 +144,7 @@ export const Toolbar = ({
         <ToggleGroup.Item
           value="sticker-twin-check"
           className="px-2 py-1 text-xs text-white hover:bg-white/20 focus:outline-none aria-checked:bg-white aria-checked:text-black aria-checked:hover:bg-white rounded flex items-center"
+          data-toolbar="true"
         >
           <ActionTwinCheckIcon className="h-4" />
         </ToggleGroup.Item>
@@ -147,6 +154,7 @@ export const Toolbar = ({
         <ToggleGroup.Item
           value="sticker-dot"
           className="px-2 py-1 text-xs text-white hover:bg-white/20 focus:outline-none aria-checked:bg-white aria-checked:text-black aria-checked:hover:bg-white rounded flex items-center"
+          data-toolbar="true"
         >
           <ActionDotIcon className="h-4" />
         </ToggleGroup.Item>
@@ -156,6 +164,7 @@ export const Toolbar = ({
         <ToggleGroup.Item
           value="text"
           className="px-2 py-1 text-xs text-white hover:bg-white/20 focus:outline-none aria-checked:bg-white aria-checked:text-black aria-checked:hover:bg-white rounded flex items-center"
+          data-toolbar="true"
         >
           <ActionTextIcon className="h-4" />
         </ToggleGroup.Item>
@@ -170,7 +179,10 @@ export const Toolbar = ({
             value={selectedTextColor}
             onValueChange={value => handleColorChange(value as TextColor)}
           >
-            <Select.Trigger className="px-2 py-1 text-xs text-white rounded hover:bg-white/20 focus:outline-none flex items-center justify-between text-nowrap">
+            <Select.Trigger
+              className="px-2 py-1 text-xs text-white rounded hover:bg-white/20 focus:outline-none flex items-center justify-between text-nowrap"
+              data-toolbar="true"
+            >
               <div className="flex items-center space-x-2">
                 <div
                   className="w-3 h-3 rounded border border-white/30"
@@ -199,14 +211,16 @@ export const Toolbar = ({
               <Select.Content
                 position="popper"
                 className="bg-black border border-gray-600 rounded shadow-lg z-50"
+                data-toolbar="true"
               >
-                <Select.Viewport className="p-1">
+                <Select.Viewport className="p-1" data-toolbar="true">
                   {Object.entries(TEXT_COLORS).map(
                     ([colorName, colorValue]) => (
                       <Select.Item
                         key={colorName}
                         value={colorName}
                         className="text-sm text-white px-3 py-1 rounded cursor-pointer hover:bg-white/20 focus:bg-white focus:text-black focus:outline-none flex items-center space-x-2"
+                        data-toolbar="true"
                       >
                         <div
                           className="w-3 h-3 rounded border border-white/30"
@@ -229,6 +243,7 @@ export const Toolbar = ({
         <ToggleGroup.Item
           value="delete"
           className="px-2 py-1 text-xs text-white hover:bg-white/20 focus:outline-none aria-checked:bg-red-500 aria-checked:text-white aria-checked:hover:bg-red-500 rounded flex items-center"
+          data-toolbar="true"
         >
           <TrashIcon className="h-4" />
         </ToggleGroup.Item>
@@ -239,6 +254,7 @@ export const Toolbar = ({
           <ToggleGroup.Item
             value="loupe"
             className="px-2 py-1 text-xs text-white hover:bg-white/20 focus:outline-none aria-checked:bg-white aria-checked:text-black aria-checked:hover:bg-white rounded flex items-center"
+            data-toolbar="true"
           >
             <MagnifyingGlassIcon className="h-4" />
           </ToggleGroup.Item>

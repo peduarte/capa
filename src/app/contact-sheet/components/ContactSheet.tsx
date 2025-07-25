@@ -5,13 +5,11 @@ import { Frame } from './Frame';
 import {
   MEASUREMENTS,
   FilmStock,
-  FILM_STOCKS,
   Frame as FrameData,
   StickerType,
   STICKER_CONFIGS,
   Sticker,
   ContactSheetState,
-  TextColor,
   TEXT_COLORS,
 } from '../utils/constants';
 
@@ -169,10 +167,37 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
       }
     }, [stickers, isDraggingSticker]);
 
-    // Clear focused sticker when toolbar action changes
+    // Track toolbar interactions to prevent clearing focused stickers
+    const isToolbarInteractionRef = useRef(false);
+
+    // Track toolbar interactions to prevent clearing focused stickers
     useEffect(() => {
-      setFocusedStickerIndex(-1);
-      setEditingStickerIndex(-1);
+      const handleGlobalMouseDown = (event: MouseEvent) => {
+        const target = event.target as Element;
+
+        // Check if the mouseDown was on the toolbar
+        const isToolbarClick = target?.closest('[data-toolbar="true"]');
+
+        if (isToolbarClick) {
+          // Mark as toolbar interaction and reset after a longer delay
+          isToolbarInteractionRef.current = true;
+          setTimeout(() => {
+            isToolbarInteractionRef.current = false;
+          }, 100); // Increased from 10ms to 100ms
+        }
+      };
+
+      document.addEventListener('mousedown', handleGlobalMouseDown, true); // Use capture phase
+      return () =>
+        document.removeEventListener('mousedown', handleGlobalMouseDown, true);
+    }, []);
+
+    // Clear focused sticker when toolbar action changes (but not from toolbar interactions)
+    useEffect(() => {
+      if (!isToolbarInteractionRef.current) {
+        setFocusedStickerIndex(-1);
+        setEditingStickerIndex(-1);
+      }
     }, [selectedToolbarAction]);
 
     // Communicate focused sticker index to parent
@@ -457,27 +482,29 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
           }
         }, 0);
       } else {
-        // No sticker tool selected, unfocus any focused stickers
-        // Save text if we're currently editing a text sticker
-        if (
-          editingStickerIndex !== -1 &&
-          localStickers[editingStickerIndex]?.type === 'text'
-        ) {
-          const element = textStickerRefs.current[editingStickerIndex];
-          if (element) {
-            const finalText = element.textContent || '';
-            const updatedStickers = localStickers.map((s, i) =>
-              i === editingStickerIndex ? { ...s, text: finalText } : s
-            );
-            setLocalStickers(updatedStickers);
-            if (onStickerChange) {
-              onStickerChange(updatedStickers);
+        // No sticker tool selected, deselect any focused stickers
+        if (focusedStickerIndex !== -1 || editingStickerIndex !== -1) {
+          // Save text if editing
+          if (
+            editingStickerIndex !== -1 &&
+            localStickers[editingStickerIndex]?.type === 'text'
+          ) {
+            const element = textStickerRefs.current[editingStickerIndex];
+            if (element) {
+              const finalText = element.textContent || '';
+              const updatedStickers = localStickers.map((s, i) =>
+                i === editingStickerIndex ? { ...s, text: finalText } : s
+              );
+              setLocalStickers(updatedStickers);
+              if (onStickerChange) {
+                onStickerChange(updatedStickers);
+              }
             }
           }
-        }
 
-        setFocusedStickerIndex(-1);
-        setEditingStickerIndex(-1);
+          setFocusedStickerIndex(-1);
+          setEditingStickerIndex(-1);
+        }
       }
     };
 
