@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { NegativeStrip } from './NegativeStrip';
 import { Frame } from './Frame';
 import {
@@ -18,8 +18,6 @@ interface ContactSheetProps {
   selectedToolbarAction: string;
   stickers?: Sticker[];
   ref: React.RefObject<HTMLDivElement | null>;
-  onMouseMove?: (event: React.MouseEvent) => void;
-  onMouseLeave?: () => void;
   onFrameUpdate?: (frameId: string, updatedFrame: FrameData) => void;
   onImageDelete?: (frameNumber: number) => void;
   onStickerUpdate?: (stickers: Sticker[]) => void;
@@ -33,8 +31,6 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
       filmStock,
       selectedToolbarAction,
       stickers,
-      onMouseMove,
-      onMouseLeave,
       onFrameUpdate,
       onImageDelete,
       onStickerUpdate,
@@ -55,6 +51,98 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const [dragStartPosition, setDragStartPosition] = useState({ x: 0, y: 0 });
     const [localStickers, setLocalStickers] = useState<Sticker[]>([]);
+
+    // Loupe configuration
+    const loupeSize = 188; // Adjust this value to change loupe size
+    const loupeScaleFactor = 2; // Adjust this value to change magnification level
+
+    // Loupe state
+    const [loupeVisible, setLoupeVisible] = useState(false);
+    const [loupePosition, setLoupePosition] = useState({ x: 0, y: 0 });
+    const [loupeOffset, setLoupeOffset] = useState({ x: 0, y: 0 });
+
+    // Touch device detection
+    const [isTouchDevice, setIsTouchDevice] = useState(false);
+
+    useEffect(() => {
+      // Check if device supports touch
+      const checkTouchDevice = () => {
+        const isTouch =
+          'ontouchstart' in window ||
+          navigator.maxTouchPoints > 0 ||
+          /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+            navigator.userAgent
+          );
+
+        setIsTouchDevice(isTouch);
+      };
+
+      checkTouchDevice();
+    }, []);
+
+    // Hide loupe when switching away from loupe mode
+    useEffect(() => {
+      if (selectedToolbarAction !== 'loupe') {
+        setLoupeVisible(false);
+      }
+    }, [selectedToolbarAction]);
+
+    // Loupe mouse handlers
+    const handleContactSheetMouseMove = useCallback(
+      (event: React.MouseEvent) => {
+        if (
+          selectedToolbarAction !== 'loupe' ||
+          !contactSheetRef.current ||
+          isTouchDevice
+        )
+          return;
+
+        const rect = contactSheetRef.current.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+
+        // Calculate the contact sheet dimensions
+        const numberOfStrips = Math.ceil(frameOrder.length / 6);
+        const maxFramesPerStrip = Math.min(6, frameOrder.length);
+        const maxStripWidth = maxFramesPerStrip * MEASUREMENTS.frameWidth;
+        const sheetWidth = maxStripWidth + 128; // Including padding (64px each side)
+        const sheetHeight =
+          MEASUREMENTS.frameHeight * numberOfStrips +
+          (numberOfStrips - 1) * 16 +
+          128; // Including padding
+
+        // Check if we're near the contact sheet (with some tolerance)
+        const tolerance = 20;
+        if (
+          mouseX < -tolerance ||
+          mouseX > sheetWidth + tolerance ||
+          mouseY < -tolerance ||
+          mouseY > sheetHeight + tolerance
+        ) {
+          setLoupeVisible(false);
+          return;
+        }
+
+        // Calculate normalized position (0-1) across the entire sheet including padding
+        // This ensures 1:1 correspondence between main view and loupe view
+        const normalizedX = mouseX / sheetWidth;
+        const normalizedY = mouseY / sheetHeight;
+
+        setLoupeVisible(true);
+        setLoupePosition({
+          x: event.clientX - loupeSize / 2,
+          y: event.clientY - loupeSize / 2,
+        });
+        setLoupeOffset({ x: normalizedX, y: normalizedY });
+      },
+      [selectedToolbarAction, frameOrder.length, loupeSize, isTouchDevice]
+    );
+
+    const handleContactSheetMouseLeave = useCallback(() => {
+      if (selectedToolbarAction === 'loupe' && !isTouchDevice) {
+        setLoupeVisible(false);
+      }
+    }, [selectedToolbarAction, isTouchDevice]);
 
     // Sync local stickers with props when not dragging
     useEffect(() => {
@@ -343,8 +431,8 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
           minWidth: '0',
           padding: '64px',
         }}
-        onMouseMove={onMouseMove}
-        onMouseLeave={onMouseLeave}
+        onMouseMove={handleContactSheetMouseMove}
+        onMouseLeave={handleContactSheetMouseLeave}
         onMouseDown={handleContactSheetMouseDown}
         ref={contactSheetRef}
       >
@@ -541,6 +629,148 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
               />
             );
           })}
+
+        {/* Loupe overlay */}
+        {loupeVisible && !isTouchDevice && (
+          <div
+            className="fixed z-50 pointer-events-none"
+            style={{
+              left: `${loupePosition.x}px`,
+              top: `${loupePosition.y}px`,
+              width: `${loupeSize}px`,
+              height: `${loupeSize}px`,
+              border: '3px solid white',
+              borderRadius: '50%',
+              background: 'black',
+              overflow: 'hidden',
+              boxShadow: '0 0 20px rgba(0,0,0,0.5)',
+            }}
+          >
+            {/* Scaled ContactSheet using existing components */}
+            <div
+              style={{
+                transform: `scale(${loupeScaleFactor}) translate(${
+                  loupeSize / 2 / loupeScaleFactor -
+                  loupeOffset.x *
+                    (Math.min(6, frameOrder.length) * MEASUREMENTS.frameWidth +
+                      128)
+                }px, ${
+                  loupeSize / 2 / loupeScaleFactor -
+                  loupeOffset.y *
+                    (MEASUREMENTS.frameHeight *
+                      Math.ceil(frameOrder.length / 6) +
+                      (Math.ceil(frameOrder.length / 6) - 1) * 16 +
+                      128)
+                }px)`,
+                transformOrigin: '0 0',
+                willChange: 'transform',
+              }}
+            >
+              {/* Render the same contact sheet content for the loupe */}
+              <div
+                className="relative bg-black"
+                style={{
+                  width: maxStripWidth + 128,
+                  height:
+                    MEASUREMENTS.frameHeight * numberOfStrips +
+                    (numberOfStrips - 1) * 16 +
+                    128,
+                  minWidth: '0',
+                  padding: '64px',
+                }}
+              >
+                {Array.from({ length: numberOfStrips }, (_, i) => {
+                  const startIndex = i * 6;
+                  const endIndex = Math.min(startIndex + 6, frameOrder.length);
+                  const stripFrameIds = frameOrder.slice(startIndex, endIndex);
+
+                  // Calculate strip rotation for authentic look
+                  const seed = i * 123.456;
+                  const stripRotation = Math.sin(seed) * 0.5;
+
+                  return (
+                    <NegativeStrip
+                      key={`loupe-strip-${i}`}
+                      rotation={stripRotation}
+                      framesCount={stripFrameIds.length}
+                    >
+                      {stripFrameIds.map((frameId, index) => (
+                        <Frame
+                          key={`loupe-${frameId}`}
+                          frameId={frameId}
+                          frame={frames[frameId]}
+                          frameNumber={startIndex + index + 1}
+                          filmStock={filmStock}
+                          selectedToolbarAction="" // Disable interactions in loupe
+                          onFrameClick={() => {}} // No-op for loupe
+                        />
+                      ))}
+                    </NegativeStrip>
+                  );
+                })}
+
+                {/* Render stickers in loupe */}
+                {localStickers &&
+                  localStickers.map((sticker, index) => {
+                    const stickerConfig = STICKER_CONFIGS[sticker.type];
+                    if (!stickerConfig) return null;
+
+                    // Handle text stickers
+                    if (sticker.type === 'text') {
+                      return (
+                        <div
+                          key={`loupe-sticker-${index}`}
+                          className="absolute select-none font-permanent-marker"
+                          style={{
+                            top: `${sticker.top}px`,
+                            left: `${sticker.left}px`,
+                            minWidth: `${stickerConfig.width}px`,
+                            minHeight: `${Math.max(stickerConfig.height, 32)}px`,
+                            zIndex: 10,
+                            color: 'white',
+                            fontSize: '28px',
+                            lineHeight: '1.1',
+                            padding: '2px',
+                            background: 'rgba(0,0,0,0.3)',
+                            borderRadius: '2px',
+                            whiteSpace: 'nowrap',
+                            userSelect: 'none',
+                            pointerEvents: 'none',
+                          }}
+                          dangerouslySetInnerHTML={{
+                            __html: sticker.text || 'Click to edit',
+                          }}
+                        />
+                      );
+                    }
+
+                    // Regular image stickers
+                    return (
+                      <div
+                        key={`loupe-sticker-${index}`}
+                        className="absolute select-none"
+                        style={{
+                          top: `${sticker.top}px`,
+                          left: `${sticker.left}px`,
+                          width: `${stickerConfig.width}px`,
+                          height: `${stickerConfig.height}px`,
+                          backgroundImage: `url(${stickerConfig.image})`,
+                          backgroundSize: 'cover',
+                          backgroundRepeat: 'no-repeat',
+                          backgroundPosition: 'center',
+                          zIndex: 10,
+                          userSelect: 'none',
+                          transform: stickerConfig.transform || '',
+                          transformOrigin: 'center center',
+                          pointerEvents: 'none',
+                        }}
+                      />
+                    );
+                  })}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
