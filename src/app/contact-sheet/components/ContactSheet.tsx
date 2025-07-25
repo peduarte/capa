@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { NegativeStrip } from './NegativeStrip';
 import { Frame } from './Frame';
 import {
@@ -21,6 +22,7 @@ interface ContactSheetProps {
   onFrameUpdate?: (frameId: string, updatedFrame: FrameData) => void;
   onImageDelete?: (frameNumber: number) => void;
   onStickerUpdate?: (stickers: Sticker[]) => void;
+  disableLoupe?: boolean;
 }
 
 export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
@@ -33,6 +35,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
       onFrameUpdate,
       onImageDelete,
       onStickerUpdate,
+      disableLoupe = false,
     },
     ref
   ) => {
@@ -76,8 +79,67 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
         setIsTouchDevice(isTouch);
       };
 
+      // Global mouse handler for loupe
+      const handleGlobalMouseMove = (e: MouseEvent) => {
+        if (
+          selectedToolbarAction === 'loupe' &&
+          !isTouchDevice &&
+          !disableLoupe &&
+          contactSheetRef.current
+        ) {
+          const rect = contactSheetRef.current.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const mouseY = e.clientY - rect.top;
+
+          // Calculate the contact sheet dimensions
+          const numberOfStrips = Math.ceil(frames.frameOrder.length / 6);
+          const maxFramesPerStrip = Math.min(6, frames.frameOrder.length);
+          const maxStripWidth = maxFramesPerStrip * MEASUREMENTS.frameWidth;
+          const sheetWidth = maxStripWidth + 32;
+          const sheetHeight =
+            MEASUREMENTS.frameHeight * numberOfStrips +
+            (numberOfStrips - 1) * 16 +
+            32;
+
+          // Check if we're near the contact sheet
+          const tolerance = 20;
+          if (
+            mouseX < -tolerance ||
+            mouseX > sheetWidth + tolerance ||
+            mouseY < -tolerance ||
+            mouseY > sheetHeight + tolerance
+          ) {
+            setLoupeVisible(false);
+            return;
+          }
+
+          // Calculate normalized position for the transform
+          const normalizedX = mouseX / sheetWidth;
+          const normalizedY = mouseY / sheetHeight;
+
+          setLoupeVisible(true);
+          setLoupePosition({
+            x: e.clientX,
+            y: e.clientY,
+          });
+          setLoupeOffset({ x: normalizedX, y: normalizedY });
+        } else {
+          setLoupeVisible(false);
+        }
+      };
+
       checkTouchDevice();
-    }, []);
+      window.addEventListener('mousemove', handleGlobalMouseMove);
+
+      return () => {
+        window.removeEventListener('mousemove', handleGlobalMouseMove);
+      };
+    }, [
+      selectedToolbarAction,
+      frames.frameOrder.length,
+      isTouchDevice,
+      disableLoupe,
+    ]);
 
     // Hide loupe when switching away from loupe mode
     useEffect(() => {
@@ -86,67 +148,15 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
       }
     }, [selectedToolbarAction]);
 
-    // Loupe mouse handlers
-    const handleContactSheetMouseMove = useCallback(
-      (event: React.MouseEvent) => {
-        if (
-          selectedToolbarAction !== 'loupe' ||
-          !contactSheetRef.current ||
-          isTouchDevice
-        )
-          return;
-
-        const rect = contactSheetRef.current.getBoundingClientRect();
-        const mouseX = event.clientX - rect.left;
-        const mouseY = event.clientY - rect.top;
-
-        // Calculate the contact sheet dimensions
-        const numberOfStrips = Math.ceil(frames.frameOrder.length / 6);
-        const maxFramesPerStrip = Math.min(6, frames.frameOrder.length);
-        const maxStripWidth = maxFramesPerStrip * MEASUREMENTS.frameWidth;
-        const sheetWidth = maxStripWidth + 128; // Including padding (64px each side)
-        const sheetHeight =
-          MEASUREMENTS.frameHeight * numberOfStrips +
-          (numberOfStrips - 1) * 16 +
-          128; // Including padding
-
-        // Check if we're near the contact sheet (with some tolerance)
-        const tolerance = 20;
-        if (
-          mouseX < -tolerance ||
-          mouseX > sheetWidth + tolerance ||
-          mouseY < -tolerance ||
-          mouseY > sheetHeight + tolerance
-        ) {
-          setLoupeVisible(false);
-          return;
-        }
-
-        // Calculate normalized position (0-1) across the entire sheet including padding
-        // This ensures 1:1 correspondence between main view and loupe view
-        const normalizedX = mouseX / sheetWidth;
-        const normalizedY = mouseY / sheetHeight;
-
-        setLoupeVisible(true);
-        setLoupePosition({
-          x: event.clientX - loupeSize / 2,
-          y: event.clientY - loupeSize / 2,
-        });
-        setLoupeOffset({ x: normalizedX, y: normalizedY });
-      },
-      [
-        selectedToolbarAction,
-        frames.frameOrder.length,
-        loupeSize,
-        isTouchDevice,
-      ]
-    );
-
     const handleContactSheetMouseLeave = useCallback(() => {
-      if (selectedToolbarAction === 'loupe' && !isTouchDevice) {
+      if (
+        selectedToolbarAction === 'loupe' &&
+        !isTouchDevice &&
+        !disableLoupe
+      ) {
         setLoupeVisible(false);
       }
-    }, [selectedToolbarAction, isTouchDevice]);
+    }, [selectedToolbarAction, isTouchDevice, disableLoupe]);
 
     // Sync local stickers with props when not dragging
     useEffect(() => {
@@ -459,120 +469,196 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
       }
     };
 
+    const loupePortal =
+      loupeVisible &&
+      !isTouchDevice &&
+      !disableLoupe &&
+      typeof window !== 'undefined' &&
+      createPortal(
+        <div
+          data-loupe="true"
+          className="fixed z-50 pointer-events-none"
+          style={{
+            left: '0px',
+            top: '0px',
+            transform: `translate(${loupePosition.x - loupeSize / 2}px, ${loupePosition.y - loupeSize / 2}px)`,
+            width: `${loupeSize}px`,
+            height: `${loupeSize}px`,
+            border: '3px solid white',
+            borderRadius: '50%',
+            overflow: 'hidden',
+            boxShadow: '0 0 20px rgba(0,0,0,0.5)',
+          }}
+        >
+          <div
+            style={{
+              transform: `scale(${loupeScaleFactor}) translate(${
+                loupeSize / 2 / loupeScaleFactor -
+                loupeOffset.x *
+                  (Math.min(6, frames.frameOrder.length) *
+                    MEASUREMENTS.frameWidth +
+                    32)
+              }px, ${
+                loupeSize / 2 / loupeScaleFactor -
+                loupeOffset.y *
+                  (MEASUREMENTS.frameHeight *
+                    Math.ceil(frames.frameOrder.length / 6) +
+                    (Math.ceil(frames.frameOrder.length / 6) - 1) * 16 +
+                    32)
+              }px)`,
+              transformOrigin: '0 0',
+              willChange: 'transform',
+            }}
+          >
+            <ContactSheet
+              ref={null}
+              frames={frames}
+              filmStock={filmStock}
+              selectedToolbarAction="" // Disable interactions in loupe
+              stickers={localStickers}
+              onFrameUpdate={() => {}} // No-op for loupe
+              onImageDelete={() => {}} // No-op for loupe
+              onStickerUpdate={() => {}} // No-op for loupe
+              disableLoupe={true} // Prevent recursive loupe rendering
+            />
+          </div>
+        </div>,
+        document.body
+      );
+
     return (
-      <div
-        className="relative bg-black"
-        style={{
-          width: maxStripWidth + 128,
-          height:
-            MEASUREMENTS.frameHeight * numberOfStrips +
-            (numberOfStrips - 1) * 16 +
-            128,
-          minWidth: '0',
-          padding: '64px',
-        }}
-        onMouseMove={handleContactSheetMouseMove}
-        onMouseLeave={handleContactSheetMouseLeave}
-        onMouseDown={handleContactSheetMouseDown}
-        ref={contactSheetRef}
-      >
-        {/* Forward the original ref to the first child for download functionality */}
-        <div ref={ref} className="absolute inset-0 pointer-events-none" />
+      <>
+        {loupePortal}
+        <div
+          className="relative bg-black"
+          style={{
+            width: maxStripWidth + 128,
+            height:
+              MEASUREMENTS.frameHeight * numberOfStrips +
+              (numberOfStrips - 1) * 16 +
+              128,
+            minWidth: '0',
+            padding: '64px',
+          }}
+          onMouseLeave={handleContactSheetMouseLeave}
+          onMouseDown={handleContactSheetMouseDown}
+          ref={contactSheetRef}
+        >
+          {/* Forward the original ref to the first child for download functionality */}
+          <div ref={ref} className="absolute inset-0 pointer-events-none" />
 
-        {Array.from({ length: numberOfStrips }, (_, i) => {
-          const startIndex = i * 6;
-          const endIndex = Math.min(startIndex + 6, frames.frameOrder.length);
-          const stripFrameIds = frames.frameOrder.slice(startIndex, endIndex);
+          {Array.from({ length: numberOfStrips }, (_, i) => {
+            const startIndex = i * 6;
+            const endIndex = Math.min(startIndex + 6, frames.frameOrder.length);
+            const stripFrameIds = frames.frameOrder.slice(startIndex, endIndex);
 
-          // Calculate strip rotation for authentic look
-          const seed = i * 123.456;
-          const stripRotation = Math.sin(seed) * 0.5;
+            // Calculate strip rotation for authentic look
+            const seed = i * 123.456;
+            const stripRotation = Math.sin(seed) * 0.5;
 
-          return (
-            <NegativeStrip
-              key={`strip-${i}`}
-              rotation={stripRotation}
-              framesCount={stripFrameIds.length}
-            >
-              {stripFrameIds.map((frameId, index) => (
-                <Frame
-                  key={frameId}
-                  frameId={frameId}
-                  frame={frames.frames[frameId]}
-                  frameNumber={startIndex + index + 1}
-                  filmStock={filmStock}
-                  selectedToolbarAction={selectedToolbarAction}
-                  onFrameClick={handleFrameClick}
-                />
-              ))}
-            </NegativeStrip>
-          );
-        })}
+            return (
+              <NegativeStrip
+                key={`strip-${i}`}
+                rotation={stripRotation}
+                framesCount={stripFrameIds.length}
+              >
+                {stripFrameIds.map((frameId, index) => (
+                  <Frame
+                    key={frameId}
+                    frameId={frameId}
+                    frame={frames.frames[frameId]}
+                    frameNumber={startIndex + index + 1}
+                    filmStock={filmStock}
+                    selectedToolbarAction={selectedToolbarAction}
+                    onFrameClick={handleFrameClick}
+                  />
+                ))}
+              </NegativeStrip>
+            );
+          })}
 
-        {/* Stickers */}
-        {localStickers &&
-          localStickers.map((sticker, index) => {
-            const stickerConfig = STICKER_CONFIGS[sticker.type];
-            if (!stickerConfig) return null;
+          {/* Stickers */}
+          {localStickers &&
+            localStickers.map((sticker, index) => {
+              const stickerConfig = STICKER_CONFIGS[sticker.type];
+              if (!stickerConfig) return null;
 
-            const isFocused = focusedStickerIndex === index;
+              const isFocused = focusedStickerIndex === index;
 
-            // Handle text stickers differently
-            if (sticker.type === 'text') {
-              const isEditing = editingStickerIndex === index;
+              // Handle text stickers differently
+              if (sticker.type === 'text') {
+                const isEditing = editingStickerIndex === index;
 
-              return (
-                <div
-                  key={`sticker-${index}`}
-                  style={{
-                    position: 'absolute',
-                    top: `${sticker.top - 4}px`,
-                    left: `${sticker.left - 4}px`,
-                    padding: '4px',
-                  }}
-                >
-                  {/* Text element with contenteditable */}
+                return (
                   <div
-                    key={`text-${index}-${isEditing ? 'editing' : 'display'}`}
-                    contentEditable={isEditing}
-                    suppressContentEditableWarning={true}
-                    className="absolute select-none font-permanent-marker"
+                    key={`sticker-${index}`}
                     style={{
-                      top: '4px',
-                      left: '4px',
-                      minWidth: `${stickerConfig.width}px`,
-                      minHeight: `${Math.max(stickerConfig.height, 32)}px`,
-                      cursor: isEditing
-                        ? 'text'
-                        : isFocused && !isEditing
-                          ? 'grab'
-                          : 'pointer',
-                      zIndex: 10,
-                      color: 'white',
-                      fontSize: '28px',
-                      lineHeight: '1.1',
-                      padding: '2px',
-                      outline: isFocused ? '2px solid white' : 'none',
-                      background: !isFocused
-                        ? 'rgba(0,0,0,0.3)'
-                        : isEditing
-                          ? 'rgba(0,0,0,0.9)'
-                          : 'transparent',
-                      borderRadius: '2px',
-                      whiteSpace: 'nowrap',
-                      userSelect: isEditing ? 'text' : 'none',
+                      position: 'absolute',
+                      top: `${sticker.top - 4}px`,
+                      left: `${sticker.left - 4}px`,
+                      padding: '4px',
                     }}
-                    onInput={event => {
-                      // Don't update state during typing - let contenteditable handle it naturally
-                      // We'll capture the final value when editing is committed
-                    }}
-                    onKeyDown={event => {
-                      if (
-                        isEditing &&
-                        (event.key === 'Enter' || event.key === 'Escape')
-                      ) {
-                        event.preventDefault();
-                        // Commit text changes when exiting edit mode
+                  >
+                    {/* Text element with contenteditable */}
+                    <div
+                      key={`text-${index}-${isEditing ? 'editing' : 'display'}`}
+                      contentEditable={isEditing}
+                      suppressContentEditableWarning={true}
+                      className="absolute select-none font-permanent-marker"
+                      style={{
+                        top: '4px',
+                        left: '4px',
+                        minWidth: `${stickerConfig.width}px`,
+                        minHeight: `${Math.max(stickerConfig.height, 32)}px`,
+                        cursor: isEditing
+                          ? 'text'
+                          : isFocused && !isEditing
+                            ? 'grab'
+                            : 'pointer',
+                        zIndex: 10,
+                        color: 'white',
+                        fontSize: '28px',
+                        lineHeight: '1.1',
+                        padding: '2px',
+                        outline: isFocused ? '2px solid white' : 'none',
+                        background: !isFocused
+                          ? 'rgba(0,0,0,0.3)'
+                          : isEditing
+                            ? 'rgba(0,0,0,0.9)'
+                            : 'transparent',
+                        borderRadius: '2px',
+                        whiteSpace: 'nowrap',
+                        userSelect: isEditing ? 'text' : 'none',
+                      }}
+                      onInput={event => {
+                        // Don't update state during typing - let contenteditable handle it naturally
+                        // We'll capture the final value when editing is committed
+                      }}
+                      onKeyDown={event => {
+                        if (
+                          isEditing &&
+                          (event.key === 'Enter' || event.key === 'Escape')
+                        ) {
+                          event.preventDefault();
+                          // Commit text changes when exiting edit mode
+                          const finalText =
+                            event.currentTarget.textContent || '';
+                          const updatedStickers = localStickers.map((s, i) =>
+                            i === index ? { ...s, text: finalText } : s
+                          );
+                          setLocalStickers(updatedStickers);
+                          if (onStickerUpdate) {
+                            onStickerUpdate(updatedStickers);
+                          }
+                          setEditingStickerIndex(-1);
+                          setFocusedStickerIndex(-1);
+                          event.currentTarget.blur();
+                        }
+                        event.stopPropagation();
+                      }}
+                      onBlur={event => {
+                        // Always commit text changes when losing focus, regardless of editing state
+                        // (the editing state might have been reset by other event handlers)
                         const finalText = event.currentTarget.textContent || '';
                         const updatedStickers = localStickers.map((s, i) =>
                           i === index ? { ...s, text: finalText } : s
@@ -583,241 +669,76 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
                         }
                         setEditingStickerIndex(-1);
                         setFocusedStickerIndex(-1);
-                        event.currentTarget.blur();
-                      }
-                      event.stopPropagation();
-                    }}
-                    onBlur={event => {
-                      // Always commit text changes when losing focus, regardless of editing state
-                      // (the editing state might have been reset by other event handlers)
-                      const finalText = event.currentTarget.textContent || '';
-                      const updatedStickers = localStickers.map((s, i) =>
-                        i === index ? { ...s, text: finalText } : s
-                      );
-                      setLocalStickers(updatedStickers);
-                      if (onStickerUpdate) {
-                        onStickerUpdate(updatedStickers);
-                      }
-                      setEditingStickerIndex(-1);
-                      setFocusedStickerIndex(-1);
-                    }}
-                    onMouseDown={event => {
-                      event.stopPropagation();
+                      }}
+                      onMouseDown={event => {
+                        event.stopPropagation();
 
-                      if (!isFocused) {
-                        // First click: focus the sticker
-                        setFocusedStickerIndex(index);
-                      } else if (!isEditing) {
-                        // If focused but not editing: start dragging
-                        handleStickerMouseDown(index, event);
-                      }
-                      // If already editing, let the contenteditable handle it
-                    }}
-                    onDoubleClick={event => {
-                      event.stopPropagation();
-                      // Double click when focused: start editing
-                      if (isFocused && !isEditing) {
-                        setEditingStickerIndex(index);
-                        // Focus will be handled by useEffect
-                      }
-                    }}
-                    ref={el => {
-                      textStickerRefs.current[index] = el;
-                    }}
-                  >
-                    {!isEditing
-                      ? sticker.text || 'Click to edit'
-                      : sticker.text || 'Edit me'}
-                  </div>
-                </div>
-              );
-            }
-
-            // Regular image stickers
-            return (
-              <div
-                key={`sticker-${index}`}
-                className="absolute select-none"
-                style={{
-                  top: `${sticker.top}px`,
-                  left: `${sticker.left}px`,
-                  width: `${stickerConfig.width}px`,
-                  height: `${stickerConfig.height}px`,
-                  backgroundImage: `url(${stickerConfig.image})`,
-                  backgroundSize: 'cover',
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'center',
-                  cursor: 'pointer',
-                  zIndex: 10,
-                  userSelect: 'none',
-                  transform: stickerConfig.transform || '',
-                  transformOrigin: 'center center',
-                  outline: isFocused ? '2px solid white' : 'none',
-                }}
-                onMouseDown={event => {
-                  event.stopPropagation();
-
-                  if (!isFocused) {
-                    // First click: focus the sticker
-                    setFocusedStickerIndex(index);
-                  } else {
-                    // Second click on non-text stickers: start dragging
-                    handleStickerMouseDown(index, event);
-                  }
-                }}
-              />
-            );
-          })}
-
-        {/* Loupe overlay */}
-        {loupeVisible && !isTouchDevice && (
-          <div
-            className="fixed z-50 pointer-events-none"
-            style={{
-              left: `${loupePosition.x}px`,
-              top: `${loupePosition.y}px`,
-              width: `${loupeSize}px`,
-              height: `${loupeSize}px`,
-              border: '3px solid white',
-              borderRadius: '50%',
-              background: 'black',
-              overflow: 'hidden',
-              boxShadow: '0 0 20px rgba(0,0,0,0.5)',
-            }}
-          >
-            {/* Scaled ContactSheet using existing components */}
-            <div
-              style={{
-                transform: `scale(${loupeScaleFactor}) translate(${
-                  loupeSize / 2 / loupeScaleFactor -
-                  loupeOffset.x *
-                    (Math.min(6, frames.frameOrder.length) *
-                      MEASUREMENTS.frameWidth +
-                      128)
-                }px, ${
-                  loupeSize / 2 / loupeScaleFactor -
-                  loupeOffset.y *
-                    (MEASUREMENTS.frameHeight *
-                      Math.ceil(frames.frameOrder.length / 6) +
-                      (Math.ceil(frames.frameOrder.length / 6) - 1) * 16 +
-                      128)
-                }px)`,
-                transformOrigin: '0 0',
-                willChange: 'transform',
-              }}
-            >
-              {/* Render the same contact sheet content for the loupe */}
-              <div
-                className="relative bg-black"
-                style={{
-                  width: maxStripWidth + 128,
-                  height:
-                    MEASUREMENTS.frameHeight * numberOfStrips +
-                    (numberOfStrips - 1) * 16 +
-                    128,
-                  minWidth: '0',
-                  padding: '64px',
-                }}
-              >
-                {Array.from({ length: numberOfStrips }, (_, i) => {
-                  const startIndex = i * 6;
-                  const endIndex = Math.min(
-                    startIndex + 6,
-                    frames.frameOrder.length
-                  );
-                  const stripFrameIds = frames.frameOrder.slice(
-                    startIndex,
-                    endIndex
-                  );
-
-                  // Calculate strip rotation for authentic look
-                  const seed = i * 123.456;
-                  const stripRotation = Math.sin(seed) * 0.5;
-
-                  return (
-                    <NegativeStrip
-                      key={`loupe-strip-${i}`}
-                      rotation={stripRotation}
-                      framesCount={stripFrameIds.length}
+                        if (!isFocused) {
+                          // First click: focus the sticker
+                          setFocusedStickerIndex(index);
+                        } else if (!isEditing) {
+                          // If focused but not editing: start dragging
+                          handleStickerMouseDown(index, event);
+                        }
+                        // If already editing, let the contenteditable handle it
+                      }}
+                      onDoubleClick={event => {
+                        event.stopPropagation();
+                        // Double click when focused: start editing
+                        if (isFocused && !isEditing) {
+                          setEditingStickerIndex(index);
+                          // Focus will be handled by useEffect
+                        }
+                      }}
+                      ref={el => {
+                        textStickerRefs.current[index] = el;
+                      }}
                     >
-                      {stripFrameIds.map((frameId, index) => (
-                        <Frame
-                          key={`loupe-${frameId}`}
-                          frameId={frameId}
-                          frame={frames.frames[frameId]}
-                          frameNumber={startIndex + index + 1}
-                          filmStock={filmStock}
-                          selectedToolbarAction="" // Disable interactions in loupe
-                          onFrameClick={() => {}} // No-op for loupe
-                        />
-                      ))}
-                    </NegativeStrip>
-                  );
-                })}
+                      {!isEditing
+                        ? sticker.text || 'Click to edit'
+                        : sticker.text || 'Edit me'}
+                    </div>
+                  </div>
+                );
+              }
 
-                {/* Render stickers in loupe */}
-                {localStickers &&
-                  localStickers.map((sticker, index) => {
-                    const stickerConfig = STICKER_CONFIGS[sticker.type];
-                    if (!stickerConfig) return null;
+              // Regular image stickers
+              return (
+                <div
+                  key={`sticker-${index}`}
+                  className="absolute select-none"
+                  style={{
+                    top: `${sticker.top}px`,
+                    left: `${sticker.left}px`,
+                    width: `${stickerConfig.width}px`,
+                    height: `${stickerConfig.height}px`,
+                    backgroundImage: `url(${stickerConfig.image})`,
+                    backgroundSize: 'cover',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center',
+                    cursor: 'pointer',
+                    zIndex: 10,
+                    userSelect: 'none',
+                    transform: stickerConfig.transform || '',
+                    transformOrigin: 'center center',
+                    outline: isFocused ? '2px solid white' : 'none',
+                  }}
+                  onMouseDown={event => {
+                    event.stopPropagation();
 
-                    // Handle text stickers
-                    if (sticker.type === 'text') {
-                      return (
-                        <div
-                          key={`loupe-sticker-${index}`}
-                          className="absolute select-none font-permanent-marker"
-                          style={{
-                            top: `${sticker.top}px`,
-                            left: `${sticker.left}px`,
-                            minWidth: `${stickerConfig.width}px`,
-                            minHeight: `${Math.max(stickerConfig.height, 32)}px`,
-                            zIndex: 10,
-                            color: 'white',
-                            fontSize: '28px',
-                            lineHeight: '1.1',
-                            padding: '2px',
-                            background: 'rgba(0,0,0,0.3)',
-                            borderRadius: '2px',
-                            whiteSpace: 'nowrap',
-                            userSelect: 'none',
-                            pointerEvents: 'none',
-                          }}
-                          dangerouslySetInnerHTML={{
-                            __html: sticker.text || 'Click to edit',
-                          }}
-                        />
-                      );
+                    if (!isFocused) {
+                      // First click: focus the sticker
+                      setFocusedStickerIndex(index);
+                    } else {
+                      // Second click on non-text stickers: start dragging
+                      handleStickerMouseDown(index, event);
                     }
-
-                    // Regular image stickers
-                    return (
-                      <div
-                        key={`loupe-sticker-${index}`}
-                        className="absolute select-none"
-                        style={{
-                          top: `${sticker.top}px`,
-                          left: `${sticker.left}px`,
-                          width: `${stickerConfig.width}px`,
-                          height: `${stickerConfig.height}px`,
-                          backgroundImage: `url(${stickerConfig.image})`,
-                          backgroundSize: 'cover',
-                          backgroundRepeat: 'no-repeat',
-                          backgroundPosition: 'center',
-                          zIndex: 10,
-                          userSelect: 'none',
-                          transform: stickerConfig.transform || '',
-                          transformOrigin: 'center center',
-                          pointerEvents: 'none',
-                        }}
-                      />
-                    );
-                  })}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+                  }}
+                />
+              );
+            })}
+        </div>
+      </>
     );
   }
 );
