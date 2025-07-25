@@ -60,6 +60,7 @@ export interface Sticker {
   top: number;
   left: number;
   text?: string; // Only used for text stickers
+  color?: string; // Only used for text stickers
 }
 
 export interface StickerConfig {
@@ -103,6 +104,16 @@ export const STICKER_CONFIGS: Record<StickerType, StickerConfig> = {
     defaultLeft: MEASUREMENTS.frameWidth / 2,
   },
 };
+
+// Text sticker color options
+export const TEXT_COLORS = {
+  white: '#fff',
+  red: '#C61C1C',
+  yellow: '#FFD000',
+  gray: '#888888',
+} as const;
+
+export type TextColor = keyof typeof TEXT_COLORS;
 
 export interface ContactSheetState {
   frames: Record<string, Frame>;

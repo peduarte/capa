@@ -11,6 +11,8 @@ import {
   STICKER_CONFIGS,
   Sticker,
   ContactSheetState,
+  TextColor,
+  TEXT_COLORS,
 } from '../utils/constants';
 
 interface ContactSheetProps {
@@ -23,6 +25,8 @@ interface ContactSheetProps {
   onImageDelete?: (frameNumber: number) => void;
   onStickerUpdate?: (stickers: Sticker[]) => void;
   disableLoupe?: boolean;
+  onFocusedTextStickerChange?: (color: TextColor | null) => void;
+  onFocusedStickerIndexChange?: (index: number) => void;
 }
 
 export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
@@ -36,6 +40,8 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
       onImageDelete,
       onStickerUpdate,
       disableLoupe = false,
+      onFocusedTextStickerChange,
+      onFocusedStickerIndexChange,
     },
     ref
   ) => {
@@ -170,6 +176,33 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
       setFocusedStickerIndex(-1);
       setEditingStickerIndex(-1);
     }, [selectedToolbarAction]);
+
+    // Communicate focused text sticker color to parent
+    useEffect(() => {
+      if (onFocusedTextStickerChange) {
+        if (
+          focusedStickerIndex >= 0 &&
+          localStickers[focusedStickerIndex]?.type === 'text'
+        ) {
+          const focusedSticker = localStickers[focusedStickerIndex];
+          const color = focusedSticker.color;
+          // Find the matching TextColor key for this color value
+          const colorKey = Object.entries(TEXT_COLORS).find(
+            ([key, value]) => value === color
+          )?.[0] as TextColor;
+          onFocusedTextStickerChange(colorKey || 'white');
+        } else {
+          onFocusedTextStickerChange(null);
+        }
+      }
+    }, [focusedStickerIndex, localStickers, onFocusedTextStickerChange]);
+
+    // Communicate focused sticker index to parent
+    useEffect(() => {
+      if (onFocusedStickerIndexChange) {
+        onFocusedStickerIndexChange(focusedStickerIndex);
+      }
+    }, [focusedStickerIndex, onFocusedStickerIndexChange]);
 
     // Global event handlers for sticker dragging
     useEffect(() => {
@@ -429,6 +462,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
           top: stickerTop,
           left: stickerLeft,
           text: stickerType === 'text' ? 'Edit me' : undefined,
+          color: stickerType === 'text' ? TEXT_COLORS.white : undefined,
         };
 
         const newStickers = [...(localStickers || []), newSticker];
@@ -616,7 +650,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
                             ? 'grab'
                             : 'pointer',
                         zIndex: 10,
-                        color: 'white',
+                        color: sticker.color || TEXT_COLORS.white,
                         fontSize: '28px',
                         lineHeight: '1.1',
                         padding: '2px',

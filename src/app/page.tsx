@@ -21,6 +21,8 @@ import {
   ContactSheetState,
   Sticker,
   STICKER_CONFIGS,
+  TextColor,
+  TEXT_COLORS,
 } from './contact-sheet/utils/constants';
 import { defaultFrameData } from './contact-sheet/utils/defaultFrameData';
 
@@ -47,6 +49,9 @@ function ContactSheetPageContent() {
     useState<string>('');
   const [rotation, setRotation] = useState<number>(0); // 0, 90, 180, 270 degrees
   const [stickers, setStickers] = useState<Sticker[]>([]);
+  const [focusedTextStickerColor, setFocusedTextStickerColor] =
+    useState<TextColor | null>(null);
+  const [focusedStickerIndex, setFocusedStickerIndex] = useState<number>(-1);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadedObjectUrlsRef = useRef<string[]>([]); // Track blob URLs for cleanup
 
@@ -567,6 +572,27 @@ function ContactSheetPageContent() {
               selectedAction={selectedToolbarAction}
               onActionChange={setSelectedToolbarAction}
               hideLoupeOption={isTouchDevice}
+              selectedTextColor={focusedTextStickerColor}
+              onTextColorChange={color => {
+                // Update the focused text sticker's color
+                if (
+                  focusedStickerIndex >= 0 &&
+                  focusedTextStickerColor !== null
+                ) {
+                  setStickers(prev =>
+                    prev.map((sticker, index) => {
+                      if (
+                        index === focusedStickerIndex &&
+                        sticker.type === 'text'
+                      ) {
+                        return { ...sticker, color: TEXT_COLORS[color] };
+                      }
+                      return sticker;
+                    })
+                  );
+                  setFocusedTextStickerColor(color);
+                }
+              }}
             />
           </div>
         )}
@@ -656,6 +682,12 @@ function ContactSheetPageContent() {
               selectedToolbarAction={selectedToolbarAction}
               stickers={stickers}
               onStickerUpdate={setStickers}
+              onFocusedTextStickerChange={color =>
+                setFocusedTextStickerColor(color)
+              }
+              onFocusedStickerIndexChange={index =>
+                setFocusedStickerIndex(index)
+              }
               onFrameUpdate={(frameId, updatedFrame) => {
                 // Only update if it's not an empty frame
                 if (!frameId.startsWith('empty_')) {
