@@ -47,12 +47,6 @@ function ContactSheetPageContent() {
     useState<string>('');
   const [rotation, setRotation] = useState<number>(0); // 0, 90, 180, 270 degrees
   const [stickers, setStickers] = useState<Sticker[]>([]);
-  const [focusedStickerIndex, setFocusedStickerIndex] = useState<number>(-1);
-  const [editingStickerIndex, setEditingStickerIndex] = useState<number>(-1);
-  const [isDraggingSticker, setIsDraggingSticker] = useState(false);
-  const [draggingStickerIndex, setDraggingStickerIndex] = useState<number>(-1);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [dragStartPosition, setDragStartPosition] = useState({ x: 0, y: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadedObjectUrlsRef = useRef<string[]>([]); // Track blob URLs for cleanup
 
@@ -100,12 +94,11 @@ function ContactSheetPageContent() {
   // Keyboard shortcuts for highlight type selection
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Only handle shortcuts if no input is focused and no text sticker is being edited
+      // Only handle shortcuts if no input is focused
       if (
         document.activeElement?.tagName === 'INPUT' ||
         document.activeElement?.tagName === 'TEXTAREA' ||
-        document.activeElement?.tagName === 'SELECT' ||
-        focusedStickerIndex !== -1 // Don't handle shortcuts when any sticker is focused
+        document.activeElement?.tagName === 'SELECT'
       ) {
         return;
       }
@@ -176,12 +169,11 @@ function ContactSheetPageContent() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isTouchDevice, selectedToolbarAction, focusedStickerIndex]);
+  }, [isTouchDevice, selectedToolbarAction]);
 
   // Clear focused sticker when toolbar action changes
   useEffect(() => {
-    setFocusedStickerIndex(-1);
-    setEditingStickerIndex(-1);
+    // Focus and editing state is now managed internally by ContactSheet
   }, [selectedToolbarAction]);
 
   // Check if we have any frames to work with
@@ -241,7 +233,6 @@ function ContactSheetPageContent() {
     uploadedObjectUrlsRef.current = [];
     setContactSheetState({ frames: {}, frameOrder: [] });
     setStickers([]);
-    setFocusedStickerIndex(-1); // Clear focused sticker
     setShowDemo(false);
     setErrors([]);
     setRotation(0); // Reset rotation
@@ -410,37 +401,7 @@ function ContactSheetPageContent() {
     }
   }, [selectedToolbarAction, isTouchDevice]);
 
-  // Sticker drag handlers
-  const handleStickerMouseDown = useCallback(
-    (stickerIndex: number, event: React.MouseEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
-
-      setIsDraggingSticker(true);
-      setDraggingStickerIndex(stickerIndex);
-
-      // Store the initial position of the sticker being dragged
-      const contactSheetRect =
-        loupeContactSheetRef.current?.getBoundingClientRect();
-      if (contactSheetRect && stickers[stickerIndex]) {
-        setDragStartPosition({
-          x: stickers[stickerIndex].left,
-          y: stickers[stickerIndex].top,
-        });
-
-        // Calculate offset from mouse to sticker's current position
-        const mouseX = event.clientX - contactSheetRect.left;
-        const mouseY = event.clientY - contactSheetRect.top;
-        const sticker = stickers[stickerIndex];
-
-        setDragOffset({
-          x: mouseX - sticker.left,
-          y: mouseY - sticker.top,
-        });
-      }
-    },
-    [stickers]
-  );
+  // Sticker drag handlers - now handled internally by ContactSheet
 
   useEffect(() => {
     const handleGlobalDragOver = (e: DragEvent) => {
@@ -470,102 +431,17 @@ function ContactSheetPageContent() {
       }
     };
 
-    const handleGlobalMouseMove = (e: MouseEvent) => {
-      if (
-        isDraggingSticker &&
-        draggingStickerIndex >= 0 &&
-        loupeContactSheetRef.current
-      ) {
-        const contactSheetRect =
-          loupeContactSheetRef.current.getBoundingClientRect();
-        const mouseX = e.clientX - contactSheetRect.left;
-        const mouseY = e.clientY - contactSheetRect.top;
-
-        // Get the sticker config for bounds calculation
-        const currentSticker = stickers[draggingStickerIndex];
-        const stickerConfig = currentSticker
-          ? STICKER_CONFIGS[currentSticker.type]
-          : null;
-        const stickerWidth = stickerConfig?.width || 51;
-        const stickerHeight = stickerConfig?.height || 26;
-
-        // Calculate new position accounting for drag offset
-        const newLeft = Math.max(
-          0,
-          Math.min(contactSheetRect.width - stickerWidth, mouseX - dragOffset.x)
-        );
-        const newTop = Math.max(
-          0,
-          Math.min(
-            contactSheetRect.height - stickerHeight,
-            mouseY - dragOffset.y
-          )
-        );
-
-        setStickers(prev =>
-          prev.map((sticker, index) =>
-            index === draggingStickerIndex
-              ? { ...sticker, left: newLeft, top: newTop }
-              : sticker
-          )
-        );
-      }
-    };
-
-    const handleGlobalMouseUp = () => {
-      // Check for sticker deletion before resetting drag state
-      if (
-        isDraggingSticker &&
-        draggingStickerIndex >= 0 &&
-        selectedToolbarAction.startsWith('sticker-')
-      ) {
-        const currentSticker = stickers[draggingStickerIndex];
-        const selectedStickerType = selectedToolbarAction.replace(
-          'sticker-',
-          ''
-        );
-
-        // Check if the sticker didn't move (within a small tolerance) and types match
-        const tolerance = 2; // pixels
-        const didNotMove =
-          Math.abs(currentSticker.left - dragStartPosition.x) < tolerance &&
-          Math.abs(currentSticker.top - dragStartPosition.y) < tolerance;
-
-        if (didNotMove && currentSticker.type === selectedStickerType) {
-          // Delete the sticker
-          setStickers(prev =>
-            prev.filter((_, index) => index !== draggingStickerIndex)
-          );
-        }
-      }
-
-      setIsDraggingSticker(false);
-      setDraggingStickerIndex(-1);
-    };
-
-    // Add global event listeners - these will only be registered ONCE
+    // Add global event listeners for file drag/drop
     window.addEventListener('dragover', handleGlobalDragOver);
     window.addEventListener('dragleave', handleGlobalDragLeave);
     window.addEventListener('drop', handleGlobalDrop);
-    window.addEventListener('mousemove', handleGlobalMouseMove);
-    window.addEventListener('mouseup', handleGlobalMouseUp);
 
     return () => {
       window.removeEventListener('dragover', handleGlobalDragOver);
       window.removeEventListener('dragleave', handleGlobalDragLeave);
       window.removeEventListener('drop', handleGlobalDrop);
-      window.removeEventListener('mousemove', handleGlobalMouseMove);
-      window.removeEventListener('mouseup', handleGlobalMouseUp);
     };
-  }, [
-    processFiles,
-    isDraggingSticker,
-    draggingStickerIndex,
-    dragOffset,
-    stickers,
-    dragStartPosition,
-    selectedToolbarAction,
-  ]); // Updated dependencies
+  }, [processFiles]);
 
   // Cleanup Object URLs when component unmounts to prevent memory leaks
   // Don't cleanup on state changes or it will revoke URLs before download
@@ -861,11 +737,6 @@ function ContactSheetPageContent() {
               filmStock={selectedFilmStock}
               selectedToolbarAction={selectedToolbarAction}
               stickers={stickers}
-              focusedStickerIndex={focusedStickerIndex}
-              editingStickerIndex={editingStickerIndex}
-              onStickerFocus={index => setFocusedStickerIndex(index ?? -1)}
-              onStickerEdit={index => setEditingStickerIndex(index ?? -1)}
-              onStickerMouseDown={handleStickerMouseDown}
               onStickerUpdate={setStickers}
               onFrameUpdate={(frameId, updatedFrame) => {
                 // Only update if it's not an empty frame
@@ -926,11 +797,8 @@ function ContactSheetPageContent() {
                   filmStock={selectedFilmStock}
                   selectedToolbarAction="" // Disable interactions in loupe
                   stickers={stickers}
-                  focusedStickerIndex={-1} // No focus in loupe
-                  editingStickerIndex={-1} // No editing in loupe
-                  onStickerFocus={() => {}} // No-op for loupe
-                  onStickerEdit={() => {}} // No-op for loupe
-                  onStickerMouseDown={handleStickerMouseDown}
+                  // focusedStickerIndex={-1} // No focus in loupe
+                  // editingStickerIndex={-1} // No editing in loupe
                   onStickerUpdate={() => {}} // No-op for loupe
                   onFrameUpdate={() => {}} // No-op for loupe
                   onImageDelete={() => {}} // No-op for loupe
