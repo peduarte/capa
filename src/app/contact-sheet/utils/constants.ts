@@ -53,12 +53,13 @@ export interface Frame {
   uploadedAt?: number;
 }
 
-export type StickerType = 'twin-check' | 'dot';
+export type StickerType = 'twin-check' | 'dot' | 'text';
 
 export interface Sticker {
   type: StickerType;
   top: number;
   left: number;
+  text?: string; // Only used for text stickers
 }
 
 export interface StickerConfig {
@@ -89,6 +90,15 @@ export const STICKER_CONFIGS: Record<StickerType, StickerConfig> = {
     image: '/sticker-dot.png',
     width: 26,
     height: 26,
+    defaultTop: MEASUREMENTS.frameHeight / 2,
+    defaultLeft: MEASUREMENTS.frameWidth / 2,
+  },
+  text: {
+    id: 'text',
+    name: 'Text',
+    image: '', // No image for text
+    width: 100, // Default width, will expand with content
+    height: 32, // Height for 28px font + padding
     defaultTop: MEASUREMENTS.frameHeight / 2,
     defaultLeft: MEASUREMENTS.frameWidth / 2,
   },

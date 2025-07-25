@@ -1,6 +1,14 @@
 import type { Metadata } from 'next';
+import { Permanent_Marker } from 'next/font/google';
 import './globals.css';
 import Fathom from './fathom';
+
+const permanentMarker = Permanent_Marker({
+  weight: '400',
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-permanent-marker',
+});
 
 export const metadata: Metadata = {
   title: 'Capa - Contact Sheet Generator',
@@ -14,7 +22,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">
+      <body className={`antialiased ${permanentMarker.variable}`}>
         <Fathom />
         {children}
       </body>

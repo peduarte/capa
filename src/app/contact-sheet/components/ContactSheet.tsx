@@ -84,18 +84,28 @@ export const ContactSheet = ({
   };
 
   const handleContactSheetMouseDown = (event: React.MouseEvent) => {
-    // Check if it's a sticker mode
-    if (selectedToolbarAction.startsWith('sticker-') && onStickerUpdate) {
+    // Check if it's a sticker mode or text mode
+    if (
+      (selectedToolbarAction.startsWith('sticker-') ||
+        selectedToolbarAction === 'text') &&
+      onStickerUpdate
+    ) {
       // Calculate click position relative to the contact sheet
       const rect = event.currentTarget.getBoundingClientRect();
       const clickX = event.clientX - rect.left;
       const clickY = event.clientY - rect.top;
 
-      // Extract sticker type from selectedToolbarAction (e.g., "sticker-dot" -> "dot")
-      const stickerType = selectedToolbarAction.replace(
-        'sticker-',
-        ''
-      ) as StickerType;
+      let stickerType: StickerType;
+      if (selectedToolbarAction === 'text') {
+        stickerType = 'text';
+      } else {
+        // Extract sticker type from selectedToolbarAction (e.g., "sticker-dot" -> "dot")
+        stickerType = selectedToolbarAction.replace(
+          'sticker-',
+          ''
+        ) as StickerType;
+      }
+
       const stickerConfig = STICKER_CONFIGS[stickerType];
 
       // Position sticker at click location, accounting for sticker size
@@ -118,9 +128,40 @@ export const ContactSheet = ({
         type: stickerType,
         top: stickerTop,
         left: stickerLeft,
+        text: stickerType === 'text' ? 'Edit me' : undefined,
       };
 
       onStickerUpdate([...(stickers || []), newSticker]);
+
+      // If it's a text sticker, focus it after it's created
+      if (stickerType === 'text') {
+        setTimeout(() => {
+          try {
+            const textElements = document.querySelectorAll(
+              '[contenteditable="true"]'
+            );
+            const lastTextElement = textElements[
+              textElements.length - 1
+            ] as HTMLElement;
+            if (
+              lastTextElement &&
+              typeof lastTextElement.focus === 'function'
+            ) {
+              lastTextElement.focus();
+              // Select all text for easy replacement
+              const selection = window.getSelection();
+              if (selection) {
+                const range = document.createRange();
+                range.selectNodeContents(lastTextElement);
+                selection.removeAllRanges();
+                selection.addRange(range);
+              }
+            }
+          } catch (error) {
+            console.warn('Failed to focus text element:', error);
+          }
+        }, 100); // Increased delay to ensure the element is fully rendered
+      }
     }
   };
 
@@ -179,6 +220,90 @@ export const ContactSheet = ({
           const stickerConfig = STICKER_CONFIGS[sticker.type];
           if (!stickerConfig) return null;
 
+          // Handle text stickers differently
+          if (sticker.type === 'text') {
+            return (
+              <div
+                key={`sticker-${index}`}
+                className="absolute select-text font-permanent-marker focus:outline-white focus:outline-2 focus:outline"
+                style={{
+                  top: `${sticker.top}px`,
+                  left: `${sticker.left}px`,
+                  minWidth: `${stickerConfig.width}px`,
+                  minHeight: `${stickerConfig.height}px`,
+                  cursor: 'text',
+                  zIndex: 10,
+                  color: 'white',
+                  fontSize: '28px',
+                  lineHeight: '1.1',
+                  padding: '2px',
+                  outline: 'none',
+                  border: 'none',
+                  background: 'transparent',
+                  whiteSpace: 'nowrap',
+                }}
+                contentEditable
+                suppressContentEditableWarning={true}
+                tabIndex={0}
+                onMouseDown={event => {
+                  // If clicking on the text itself, allow editing
+                  event.stopPropagation();
+                  // Focus the element for editing
+                  setTimeout(() => {
+                    event.currentTarget.focus();
+                  }, 0);
+                }}
+                onFocus={event => {
+                  // Add visible focus styling
+                  event.currentTarget.style.outline = '2px solid white';
+                }}
+                onBlur={event => {
+                  // Remove focus styling
+                  event.currentTarget.style.outline = 'none';
+                }}
+                onInput={event => {
+                  const newText = event.currentTarget.textContent || '';
+                  if (onStickerUpdate) {
+                    const updatedStickers = stickers.map((s, i) =>
+                      i === index ? { ...s, text: newText } : s
+                    );
+                    onStickerUpdate(updatedStickers);
+                  }
+                }}
+                onKeyDown={event => {
+                  // Prevent Enter key from creating new lines
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    event.currentTarget.blur(); // Exit editing mode
+                  }
+                  // Stop propagation to prevent any keyboard shortcuts from interfering
+                  event.stopPropagation();
+                }}
+                // Add drag handle - a small invisible area for dragging
+              >
+                {sticker.text || 'Edit me'}
+                {/* Drag handle - positioned at top-left corner */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '-10px',
+                    left: '-10px',
+                    width: '20px',
+                    height: '20px',
+                    cursor: 'grab',
+                    background: 'transparent',
+                    zIndex: 1,
+                  }}
+                  onMouseDown={event => {
+                    event.stopPropagation();
+                    onStickerMouseDown?.(index, event);
+                  }}
+                />
+              </div>
+            );
+          }
+
+          // Regular image stickers
           return (
             <div
               key={`sticker-${index}`}

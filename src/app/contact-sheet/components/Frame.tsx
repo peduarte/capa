@@ -48,8 +48,11 @@ export const Frame = ({
           return;
         }
 
-        // For sticker mode, let the event bubble up to ContactSheet (don't process or stop propagation)
-        if (selectedToolbarAction.startsWith('sticker-')) {
+        // For sticker mode and text mode, let the event bubble up to ContactSheet (don't process or stop propagation)
+        if (
+          selectedToolbarAction.startsWith('sticker-') ||
+          selectedToolbarAction === 'text'
+        ) {
           return;
         }
 

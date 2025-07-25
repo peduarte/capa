@@ -9,6 +9,7 @@ import {
   ActionCircleIcon,
   ActionTwinCheckIcon,
   ActionDotIcon,
+  ActionTextIcon,
 } from './Icons';
 
 interface ToolbarProps {
@@ -87,6 +88,15 @@ export const Toolbar = ({
           className="px-2 py-1 text-xs text-white hover:bg-white/20 focus:outline-none aria-checked:bg-white aria-checked:text-black aria-checked:hover:bg-white rounded flex items-center"
         >
           <ActionCrossIcon className="h-4" />
+        </ToggleGroup.Item>
+      </TooltipWrapper>
+
+      <TooltipWrapper content="Text (T)">
+        <ToggleGroup.Item
+          value="text"
+          className="px-2 py-1 text-xs text-white hover:bg-white/20 focus:outline-none aria-checked:bg-white aria-checked:text-black aria-checked:hover:bg-white rounded flex items-center"
+        >
+          <ActionTextIcon className="h-4" />
         </ToggleGroup.Item>
       </TooltipWrapper>
 

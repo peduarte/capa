@@ -9,6 +9,40 @@ import {
   StickerType,
 } from '../../contact-sheet/utils/constants';
 
+// Load the Permanent Marker font
+async function loadPermanentMarkerFont() {
+  try {
+    const response = await fetch(
+      'https://fonts.googleapis.com/css2?family=Permanent+Marker:wght@400&display=swap'
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch font CSS');
+    }
+
+    const css = await response.text();
+    // Extract the font URL from the CSS
+    const fontUrlMatch = css.match(/url\(([^)]+)\)/);
+
+    if (!fontUrlMatch) {
+      throw new Error('Font URL not found in CSS');
+    }
+
+    const fontUrl = fontUrlMatch[1].replace(/['"]/g, '');
+    const fontResponse = await fetch(fontUrl);
+
+    if (!fontResponse.ok) {
+      throw new Error('Failed to fetch font file');
+    }
+
+    return fontResponse.arrayBuffer();
+  } catch (error) {
+    console.warn('Failed to load Permanent Marker font:', error);
+    // Return null to indicate font loading failed
+    return null;
+  }
+}
+
 // Types for the request payload
 interface Frame {
   src: string;
@@ -78,6 +112,9 @@ export async function POST(request: NextRequest) {
 
     console.log('Base URL:', baseUrl);
 
+    // Load the font
+    const permanentMarkerFont = await loadPermanentMarkerFont();
+
     // Calculate dimensions with high DPI scaling
     const scaleFactor = 2; // 2x scaling for high resolution output
     const baseDimensions = getContactSheetDimensions(
@@ -100,7 +137,9 @@ export async function POST(request: NextRequest) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontFamily: 'Courier, monospace',
+            fontFamily: permanentMarkerFont
+              ? 'Permanent Marker, cursive'
+              : 'serif',
           }}
         >
           <ContactSheetContent
@@ -117,6 +156,16 @@ export async function POST(request: NextRequest) {
       {
         width: dimensions.width,
         height: dimensions.height,
+        fonts: permanentMarkerFont
+          ? [
+              {
+                name: 'Permanent Marker',
+                data: permanentMarkerFont,
+                style: 'normal',
+                weight: 400,
+              },
+            ]
+          : [],
       }
     );
   } catch (error) {
@@ -358,6 +407,31 @@ function ContactSheetContent({
         const stickerConfig = STICKER_CONFIGS[sticker.type];
         if (!stickerConfig) return null;
 
+        // Handle text stickers differently
+        if (sticker.type === 'text') {
+          return (
+            <div
+              key={`sticker-${index}`}
+              style={{
+                position: 'absolute',
+                top: sticker.top * scaleFactor,
+                left: sticker.left * scaleFactor,
+                minWidth: stickerConfig.width * scaleFactor,
+                minHeight: stickerConfig.height * scaleFactor,
+                color: 'white',
+                fontSize: 28 * scaleFactor,
+                fontFamily: 'Permanent Marker, serif',
+                lineHeight: 1.1,
+                zIndex: 30,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {sticker.text || 'Edit me'}
+            </div>
+          );
+        }
+
+        // Regular image stickers
         // Use the image path directly
         const imagePath = stickerConfig.image;
 

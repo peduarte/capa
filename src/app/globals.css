@@ -1,5 +1,9 @@
 @import 'tailwindcss';
 
+:root {
+  --font-permanent-marker: var(--font-permanent-marker);
+}
+
 body {
   background: #000;
   color: white;
@@ -15,6 +19,10 @@ body {
     'Open Sans',
     'Helvetica Neue',
     sans-serif;
+}
+
+.font-permanent-marker {
+  font-family: var(--font-permanent-marker), cursive;
 }
 
 radix-portal > div {
