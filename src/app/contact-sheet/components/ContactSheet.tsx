@@ -312,7 +312,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
           }, 10);
         }
       }
-    }, [editingStickerIndex, localStickers]);
+    }, [editingStickerIndex]);
 
     const numberOfStrips = Math.ceil(frames.frameOrder.length / 6);
     const maxFramesPerStrip = Math.min(6, frames.frameOrder.length);
@@ -356,6 +356,24 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
       ) {
         // If a sticker is already focused, just unfocus it (don't place new)
         if (focusedStickerIndex !== -1) {
+          // Save text if we're currently editing a text sticker
+          if (
+            editingStickerIndex !== -1 &&
+            localStickers[editingStickerIndex]?.type === 'text'
+          ) {
+            const element = textStickerRefs.current[editingStickerIndex];
+            if (element) {
+              const finalText = element.textContent || '';
+              const updatedStickers = localStickers.map((s, i) =>
+                i === editingStickerIndex ? { ...s, text: finalText } : s
+              );
+              setLocalStickers(updatedStickers);
+              if (onStickerUpdate) {
+                onStickerUpdate(updatedStickers);
+              }
+            }
+          }
+
           setFocusedStickerIndex(-1);
           setEditingStickerIndex(-1); // Also clear editing state
           return;
@@ -418,6 +436,24 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
         }, 0);
       } else {
         // No sticker tool selected, unfocus any focused stickers
+        // Save text if we're currently editing a text sticker
+        if (
+          editingStickerIndex !== -1 &&
+          localStickers[editingStickerIndex]?.type === 'text'
+        ) {
+          const element = textStickerRefs.current[editingStickerIndex];
+          if (element) {
+            const finalText = element.textContent || '';
+            const updatedStickers = localStickers.map((s, i) =>
+              i === editingStickerIndex ? { ...s, text: finalText } : s
+            );
+            setLocalStickers(updatedStickers);
+            if (onStickerUpdate) {
+              onStickerUpdate(updatedStickers);
+            }
+          }
+        }
+
         setFocusedStickerIndex(-1);
         setEditingStickerIndex(-1);
       }
@@ -497,6 +533,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
                 >
                   {/* Text element with contenteditable */}
                   <div
+                    key={`text-${index}-${isEditing ? 'editing' : 'display'}`}
                     contentEditable={isEditing}
                     suppressContentEditableWarning={true}
                     className="absolute select-none font-permanent-marker"
@@ -529,11 +566,6 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
                       // Don't update state during typing - let contenteditable handle it naturally
                       // We'll capture the final value when editing is committed
                     }}
-                    dangerouslySetInnerHTML={
-                      isEditing
-                        ? undefined
-                        : { __html: sticker.text || 'Click to edit' }
-                    }
                     onKeyDown={event => {
                       if (
                         isEditing &&
@@ -556,19 +588,18 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
                       event.stopPropagation();
                     }}
                     onBlur={event => {
-                      if (isEditing) {
-                        // Commit text changes when losing focus
-                        const finalText = event.currentTarget.textContent || '';
-                        const updatedStickers = localStickers.map((s, i) =>
-                          i === index ? { ...s, text: finalText } : s
-                        );
-                        setLocalStickers(updatedStickers);
-                        if (onStickerUpdate) {
-                          onStickerUpdate(updatedStickers);
-                        }
-                        setEditingStickerIndex(-1);
-                        setFocusedStickerIndex(-1);
+                      // Always commit text changes when losing focus, regardless of editing state
+                      // (the editing state might have been reset by other event handlers)
+                      const finalText = event.currentTarget.textContent || '';
+                      const updatedStickers = localStickers.map((s, i) =>
+                        i === index ? { ...s, text: finalText } : s
+                      );
+                      setLocalStickers(updatedStickers);
+                      if (onStickerUpdate) {
+                        onStickerUpdate(updatedStickers);
                       }
+                      setEditingStickerIndex(-1);
+                      setFocusedStickerIndex(-1);
                     }}
                     onMouseDown={event => {
                       event.stopPropagation();
@@ -593,7 +624,11 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
                     ref={el => {
                       textStickerRefs.current[index] = el;
                     }}
-                  ></div>
+                  >
+                    {!isEditing
+                      ? sticker.text || 'Click to edit'
+                      : sticker.text || 'Edit me'}
+                  </div>
                 </div>
               );
             }
