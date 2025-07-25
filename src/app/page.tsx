@@ -47,6 +47,8 @@ function ContactSheetPageContent() {
     useState<string>('');
   const [rotation, setRotation] = useState<number>(0); // 0, 90, 180, 270 degrees
   const [stickers, setStickers] = useState<Sticker[]>([]);
+  const [focusedStickerIndex, setFocusedStickerIndex] = useState<number>(-1);
+  const [editingStickerIndex, setEditingStickerIndex] = useState<number>(-1);
   const [isDraggingSticker, setIsDraggingSticker] = useState(false);
   const [draggingStickerIndex, setDraggingStickerIndex] = useState<number>(-1);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -98,11 +100,12 @@ function ContactSheetPageContent() {
   // Keyboard shortcuts for highlight type selection
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Only handle shortcuts if no input is focused
+      // Only handle shortcuts if no input is focused and no text sticker is being edited
       if (
         document.activeElement?.tagName === 'INPUT' ||
         document.activeElement?.tagName === 'TEXTAREA' ||
-        document.activeElement?.tagName === 'SELECT'
+        document.activeElement?.tagName === 'SELECT' ||
+        focusedStickerIndex !== -1 // Don't handle shortcuts when any sticker is focused
       ) {
         return;
       }
@@ -156,6 +159,11 @@ function ContactSheetPageContent() {
             );
           }
           break;
+        case 't':
+          setSelectedToolbarAction(current =>
+            current === 'text' ? '' : 'text'
+          );
+          break;
         default:
           return;
       }
@@ -168,7 +176,18 @@ function ContactSheetPageContent() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isTouchDevice, selectedToolbarAction]);
+  }, [isTouchDevice, selectedToolbarAction, focusedStickerIndex]);
+
+  // Clear focused sticker when toolbar action changes
+  useEffect(() => {
+    setFocusedStickerIndex(-1);
+    setEditingStickerIndex(-1);
+  }, [selectedToolbarAction]);
+
+  // Check if we have any frames to work with
+  const shouldShowDemo = useMemo(() => {
+    return contactSheetState.frameOrder.length === 0 && !showDemo;
+  }, [contactSheetState.frameOrder.length, showDemo]);
 
   // Demo frame data (loaded from external TypeScript file)
   const demoData: ContactSheetState = defaultFrameData;
@@ -218,10 +237,11 @@ function ContactSheetPageContent() {
 
   // Clear contact sheet back to empty frames
   const clearContactSheet = useCallback(() => {
-    // Clean up existing object URLs
     revokeObjectUrls(uploadedObjectUrlsRef.current);
+    uploadedObjectUrlsRef.current = [];
     setContactSheetState({ frames: {}, frameOrder: [] });
-    uploadedObjectUrlsRef.current = []; // Update ref
+    setStickers([]);
+    setFocusedStickerIndex(-1); // Clear focused sticker
     setShowDemo(false);
     setErrors([]);
     setRotation(0); // Reset rotation
@@ -841,6 +861,10 @@ function ContactSheetPageContent() {
               filmStock={selectedFilmStock}
               selectedToolbarAction={selectedToolbarAction}
               stickers={stickers}
+              focusedStickerIndex={focusedStickerIndex}
+              editingStickerIndex={editingStickerIndex}
+              onStickerFocus={index => setFocusedStickerIndex(index ?? -1)}
+              onStickerEdit={index => setEditingStickerIndex(index ?? -1)}
               onStickerMouseDown={handleStickerMouseDown}
               onStickerUpdate={setStickers}
               onFrameUpdate={(frameId, updatedFrame) => {
@@ -902,6 +926,10 @@ function ContactSheetPageContent() {
                   filmStock={selectedFilmStock}
                   selectedToolbarAction="" // Disable interactions in loupe
                   stickers={stickers}
+                  focusedStickerIndex={-1} // No focus in loupe
+                  editingStickerIndex={-1} // No editing in loupe
+                  onStickerFocus={() => {}} // No-op for loupe
+                  onStickerEdit={() => {}} // No-op for loupe
                   onStickerMouseDown={handleStickerMouseDown}
                   onStickerUpdate={() => {}} // No-op for loupe
                   onFrameUpdate={() => {}} // No-op for loupe
