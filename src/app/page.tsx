@@ -200,11 +200,11 @@ function ContactSheetPageContent() {
     return createEmptyFrameState();
   };
 
-  const displayState = getDisplayState();
+  const framesState = getDisplayState();
 
   // Helper to get current images from state
   const getCurrentImages = (): string[] => {
-    return displayState.frameOrder.map(id => displayState.frames[id].src);
+    return framesState.frameOrder.map(id => framesState.frames[id].src);
   };
 
   // Use uploaded images if available, otherwise demo images if enabled, otherwise empty frames
@@ -651,8 +651,7 @@ function ContactSheetPageContent() {
           >
             <ContactSheet
               ref={contactSheetRef}
-              frames={displayState.frames}
-              frameOrder={displayState.frameOrder}
+              frames={framesState}
               filmStock={selectedFilmStock}
               selectedToolbarAction={selectedToolbarAction}
               stickers={stickers}

@@ -9,11 +9,11 @@ import {
   StickerType,
   STICKER_CONFIGS,
   Sticker,
+  ContactSheetState,
 } from '../utils/constants';
 
 interface ContactSheetProps {
-  frames: Record<string, FrameData>;
-  frameOrder: string[];
+  frames: ContactSheetState;
   filmStock: FilmStock;
   selectedToolbarAction: string;
   stickers?: Sticker[];
@@ -27,7 +27,6 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
   (
     {
       frames,
-      frameOrder,
       filmStock,
       selectedToolbarAction,
       stickers,
@@ -102,8 +101,8 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
         const mouseY = event.clientY - rect.top;
 
         // Calculate the contact sheet dimensions
-        const numberOfStrips = Math.ceil(frameOrder.length / 6);
-        const maxFramesPerStrip = Math.min(6, frameOrder.length);
+        const numberOfStrips = Math.ceil(frames.frameOrder.length / 6);
+        const maxFramesPerStrip = Math.min(6, frames.frameOrder.length);
         const maxStripWidth = maxFramesPerStrip * MEASUREMENTS.frameWidth;
         const sheetWidth = maxStripWidth + 128; // Including padding (64px each side)
         const sheetHeight =
@@ -135,7 +134,12 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
         });
         setLoupeOffset({ x: normalizedX, y: normalizedY });
       },
-      [selectedToolbarAction, frameOrder.length, loupeSize, isTouchDevice]
+      [
+        selectedToolbarAction,
+        frames.frameOrder.length,
+        loupeSize,
+        isTouchDevice,
+      ]
     );
 
     const handleContactSheetMouseLeave = useCallback(() => {
@@ -310,8 +314,8 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
       }
     }, [editingStickerIndex, localStickers]);
 
-    const numberOfStrips = Math.ceil(frameOrder.length / 6);
-    const maxFramesPerStrip = Math.min(6, frameOrder.length);
+    const numberOfStrips = Math.ceil(frames.frameOrder.length / 6);
+    const maxFramesPerStrip = Math.min(6, frames.frameOrder.length);
     const maxStripWidth = maxFramesPerStrip * MEASUREMENTS.frameWidth;
 
     const handleFrameClick = (frameNumber: number) => {
@@ -321,8 +325,8 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
       }
 
       // Check if we have a valid frame to update
-      const frameId = frameOrder[frameNumber - 1];
-      const frame = frames[frameId];
+      const frameId = frames.frameOrder[frameNumber - 1];
+      const frame = frames.frames[frameId];
       if (!frame || !onFrameUpdate) return;
 
       // Get the highlight type from the selected action
@@ -441,8 +445,8 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
 
         {Array.from({ length: numberOfStrips }, (_, i) => {
           const startIndex = i * 6;
-          const endIndex = Math.min(startIndex + 6, frameOrder.length);
-          const stripFrameIds = frameOrder.slice(startIndex, endIndex);
+          const endIndex = Math.min(startIndex + 6, frames.frameOrder.length);
+          const stripFrameIds = frames.frameOrder.slice(startIndex, endIndex);
 
           // Calculate strip rotation for authentic look
           const seed = i * 123.456;
@@ -458,7 +462,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
                 <Frame
                   key={frameId}
                   frameId={frameId}
-                  frame={frames[frameId]}
+                  frame={frames.frames[frameId]}
                   frameNumber={startIndex + index + 1}
                   filmStock={filmStock}
                   selectedToolbarAction={selectedToolbarAction}
@@ -652,14 +656,15 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
                 transform: `scale(${loupeScaleFactor}) translate(${
                   loupeSize / 2 / loupeScaleFactor -
                   loupeOffset.x *
-                    (Math.min(6, frameOrder.length) * MEASUREMENTS.frameWidth +
+                    (Math.min(6, frames.frameOrder.length) *
+                      MEASUREMENTS.frameWidth +
                       128)
                 }px, ${
                   loupeSize / 2 / loupeScaleFactor -
                   loupeOffset.y *
                     (MEASUREMENTS.frameHeight *
-                      Math.ceil(frameOrder.length / 6) +
-                      (Math.ceil(frameOrder.length / 6) - 1) * 16 +
+                      Math.ceil(frames.frameOrder.length / 6) +
+                      (Math.ceil(frames.frameOrder.length / 6) - 1) * 16 +
                       128)
                 }px)`,
                 transformOrigin: '0 0',
@@ -681,8 +686,14 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
               >
                 {Array.from({ length: numberOfStrips }, (_, i) => {
                   const startIndex = i * 6;
-                  const endIndex = Math.min(startIndex + 6, frameOrder.length);
-                  const stripFrameIds = frameOrder.slice(startIndex, endIndex);
+                  const endIndex = Math.min(
+                    startIndex + 6,
+                    frames.frameOrder.length
+                  );
+                  const stripFrameIds = frames.frameOrder.slice(
+                    startIndex,
+                    endIndex
+                  );
 
                   // Calculate strip rotation for authentic look
                   const seed = i * 123.456;
@@ -698,7 +709,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
                         <Frame
                           key={`loupe-${frameId}`}
                           frameId={frameId}
-                          frame={frames[frameId]}
+                          frame={frames.frames[frameId]}
                           frameNumber={startIndex + index + 1}
                           filmStock={filmStock}
                           selectedToolbarAction="" // Disable interactions in loupe

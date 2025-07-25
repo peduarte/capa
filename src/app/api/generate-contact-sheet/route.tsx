@@ -1,12 +1,13 @@
 import { NextRequest } from 'next/server';
 import { ImageResponse } from '@vercel/og';
 import {
-  MEASUREMENTS,
   FilmStock,
   FILM_STOCKS,
-  Sticker,
+  Frame as FrameData,
+  MEASUREMENTS,
   STICKER_CONFIGS,
-  StickerType,
+  Sticker,
+  ContactSheetState,
 } from '../../contact-sheet/utils/constants';
 
 // Load the Permanent Marker font
@@ -126,48 +127,47 @@ export async function POST(request: NextRequest) {
       height: baseDimensions.height * scaleFactor,
     };
 
-    return new ImageResponse(
-      (
-        <div
-          style={{
-            position: 'relative',
-            background: 'black',
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontFamily: permanentMarkerFont
-              ? 'Permanent Marker, cursive'
-              : 'serif',
-          }}
-        >
-          <ContactSheetContent
-            frames={frames}
-            frameOrder={frameOrder}
-            baseUrl={baseUrl}
-            filmStock={filmStock}
-            rotation={rotation}
-            scaleFactor={scaleFactor}
-            stickers={stickers}
-          />
-        </div>
-      ),
-      {
-        width: dimensions.width,
-        height: dimensions.height,
-        fonts: permanentMarkerFont
-          ? [
-              {
-                name: 'Permanent Marker',
-                data: permanentMarkerFont,
-                style: 'normal',
-                weight: 400,
-              },
-            ]
-          : [],
-      }
+    // Generate the contact sheet using React components
+    const contactSheet = (
+      <div
+        style={{
+          position: 'relative',
+          background: 'black',
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontFamily: permanentMarkerFont
+            ? 'Permanent Marker, cursive'
+            : 'serif',
+        }}
+      >
+        <ContactSheetContent
+          frames={{ frames, frameOrder }}
+          baseUrl={baseUrl}
+          filmStock={filmStock}
+          rotation={rotation}
+          scaleFactor={scaleFactor}
+          stickers={stickers}
+        />
+      </div>
     );
+
+    return new ImageResponse(contactSheet, {
+      width: dimensions.width,
+      height: dimensions.height,
+      fonts: permanentMarkerFont
+        ? [
+            {
+              name: 'Permanent Marker',
+              data: permanentMarkerFont,
+              style: 'normal',
+              weight: 400,
+            },
+          ]
+        : [],
+    });
   } catch (error) {
     console.error('Error generating contact sheet:', error);
     return new Response('Failed to generate contact sheet', { status: 500 });
@@ -176,15 +176,13 @@ export async function POST(request: NextRequest) {
 
 function ContactSheetContent({
   frames,
-  frameOrder,
   baseUrl,
   filmStock,
   rotation = 0,
   scaleFactor = 1,
   stickers = [],
 }: {
-  frames: Record<string, Frame>;
-  frameOrder: string[];
+  frames: ContactSheetState;
   baseUrl: string;
   filmStock: FilmStock;
   rotation: number;
@@ -197,8 +195,8 @@ function ContactSheetContent({
   const IMAGE_WIDTH = MEASUREMENTS.imageWidth * scaleFactor;
   const IMAGE_HEIGHT = MEASUREMENTS.imageHeight * scaleFactor;
 
-  const numberOfStrips = Math.ceil(frameOrder.length / 6);
-  const maxFramesPerStrip = Math.min(6, frameOrder.length);
+  const numberOfStrips = Math.ceil(frames.frameOrder.length / 6);
+  const maxFramesPerStrip = Math.min(6, frames.frameOrder.length);
   const maxStripWidth = maxFramesPerStrip * FRAME_WIDTH;
 
   // Calculate container dimensions - match ContactSheet.tsx exactly
@@ -224,7 +222,10 @@ function ContactSheetContent({
     >
       {Array.from({ length: numberOfStrips }, (_, stripIndex) => {
         const startIndex = stripIndex * 6;
-        const framesInStrip = Math.min(6, frameOrder.length - startIndex);
+        const framesInStrip = Math.min(
+          6,
+          frames.frameOrder.length - startIndex
+        );
         const stripWidth = framesInStrip * FRAME_WIDTH;
 
         // Add slight rotation for authenticity
@@ -248,8 +249,8 @@ function ContactSheetContent({
             {/* Generate frames for this strip */}
             {Array.from({ length: framesInStrip }, (_, frameIndex) => {
               const imageIndex = startIndex + frameIndex;
-              const frameId = frameOrder[imageIndex];
-              const frame = frames[frameId];
+              const frameId = frames.frameOrder[imageIndex];
+              const frame = frames.frames[frameId];
               const frameNumber = imageIndex + 1;
 
               return (
