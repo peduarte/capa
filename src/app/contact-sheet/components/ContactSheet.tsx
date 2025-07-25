@@ -51,6 +51,30 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
     },
     ref
   ) => {
+    const textStickerRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+    // Focus the contenteditable when a text sticker enters editing mode
+    useEffect(() => {
+      if (
+        editingStickerIndex >= 0 &&
+        stickers &&
+        stickers[editingStickerIndex]?.type === 'text'
+      ) {
+        const element = textStickerRefs.current[editingStickerIndex];
+        if (element) {
+          setTimeout(() => {
+            element.focus();
+            // Select all text for easy replacement
+            const selection = window.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(element);
+            selection?.removeAllRanges();
+            selection?.addRange(range);
+          }, 10);
+        }
+      }
+    }, [editingStickerIndex]);
+
     const numberOfStrips = Math.ceil(frameOrder.length / 6);
     const maxFramesPerStrip = Math.min(6, frameOrder.length);
     const maxStripWidth = maxFramesPerStrip * MEASUREMENTS.frameWidth;
@@ -151,7 +175,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
           if (stickerType === 'text') {
             onStickerEdit?.(newStickerIndex);
           }
-        }, 50);
+        }, 0);
       } else {
         // No sticker tool selected, unfocus any focused stickers
         onStickerFocus?.(null);
@@ -230,15 +254,21 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
                     padding: '4px',
                   }}
                 >
-                  {/* Text display */}
+                  {/* Text element with contenteditable */}
                   <div
+                    contentEditable={isEditing}
+                    suppressContentEditableWarning={true}
                     className="absolute select-none font-permanent-marker"
                     style={{
                       top: '4px',
                       left: '4px',
                       minWidth: `${stickerConfig.width}px`,
-                      minHeight: `${Math.max(stickerConfig.height, 32)}px`, // Ensure good clickable area
-                      cursor: isFocused && !isEditing ? 'grab' : 'pointer',
+                      minHeight: `${Math.max(stickerConfig.height, 32)}px`,
+                      cursor: isEditing
+                        ? 'text'
+                        : isFocused && !isEditing
+                          ? 'grab'
+                          : 'pointer',
                       zIndex: 10,
                       color: 'white',
                       fontSize: '28px',
@@ -247,115 +277,69 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
                       outline: isFocused ? '2px solid white' : 'none',
                       background: !isFocused
                         ? 'rgba(0,0,0,0.3)'
-                        : 'transparent', // Subtle background when not focused
-                      border: !isFocused
-                        ? '1px solid rgba(255,255,255,0.3)'
-                        : 'none', // Subtle border when not focused
+                        : isEditing
+                          ? 'rgba(0,0,0,0.9)'
+                          : 'transparent',
                       borderRadius: '2px',
                       whiteSpace: 'nowrap',
-                      display: 'flex',
-                      alignItems: 'center',
+                      userSelect: isEditing ? 'text' : 'none',
+                    }}
+                    onInput={event => {
+                      if (isEditing && onStickerUpdate) {
+                        const newText = event.currentTarget.textContent || '';
+                        const updatedStickers = stickers.map((s, i) =>
+                          i === index ? { ...s, text: newText } : s
+                        );
+                        onStickerUpdate(updatedStickers);
+                      }
+                    }}
+                    dangerouslySetInnerHTML={
+                      isEditing
+                        ? undefined
+                        : { __html: sticker.text || 'Click to edit' }
+                    }
+                    onKeyDown={event => {
+                      if (
+                        isEditing &&
+                        (event.key === 'Enter' || event.key === 'Escape')
+                      ) {
+                        event.preventDefault();
+                        onStickerEdit?.(null);
+                        onStickerFocus?.(null);
+                        event.currentTarget.blur();
+                      }
+                      event.stopPropagation();
+                    }}
+                    onBlur={() => {
+                      if (isEditing) {
+                        onStickerEdit?.(null);
+                        onStickerFocus?.(null);
+                      }
                     }}
                     onMouseDown={event => {
                       event.stopPropagation();
 
                       if (!isFocused) {
-                        // First click: focus the sticker (don't edit yet)
+                        // First click: focus the sticker
                         onStickerFocus?.(index);
                       } else if (!isEditing) {
                         // If focused but not editing: start dragging
                         onStickerMouseDown?.(index, event);
                       }
-                      // If already editing, do nothing (let input handle it)
+                      // If already editing, let the contenteditable handle it
                     }}
                     onDoubleClick={event => {
                       event.stopPropagation();
                       // Double click when focused: start editing
                       if (isFocused && !isEditing) {
                         onStickerEdit?.(index);
+                        // Focus will be handled by useEffect
                       }
                     }}
-                  >
-                    {/* Show text when not editing */}
-                    {!isEditing && (sticker.text || 'Click to edit')}
-
-                    {/* Drag handle for focused but not editing stickers - make it more visible */}
-                    {isFocused && !isEditing && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: '-8px',
-                          right: '-8px',
-                          width: '16px',
-                          height: '16px',
-                          cursor: 'grab',
-                          background: 'white',
-                          border: '1px solid black',
-                          borderRadius: '50%',
-                          zIndex: 1,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '8px',
-                          color: 'black',
-                        }}
-                        onMouseDown={event => {
-                          event.stopPropagation();
-                          onStickerMouseDown?.(index, event);
-                        }}
-                      >
-                        ⋮⋮
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Editing input overlay - only render when editing */}
-                  {isEditing && (
-                    <input
-                      key={`input-${index}-${isEditing}`} // Force re-render when editing state changes
-                      type="text"
-                      value={sticker.text || ''}
-                      onChange={event => {
-                        const newText = event.target.value;
-                        if (onStickerUpdate) {
-                          const updatedStickers = stickers.map((s, i) =>
-                            i === index ? { ...s, text: newText } : s
-                          );
-                          onStickerUpdate(updatedStickers);
-                        }
-                      }}
-                      onKeyDown={event => {
-                        if (event.key === 'Enter' || event.key === 'Escape') {
-                          event.preventDefault();
-                          onStickerEdit?.(null); // Stop editing
-                          onStickerFocus?.(null); // And unfocus
-                        }
-                        event.stopPropagation();
-                      }}
-                      onBlur={() => {
-                        onStickerEdit?.(null); // Stop editing
-                        onStickerFocus?.(null); // And unfocus
-                      }}
-                      autoFocus
-                      className="absolute font-permanent-marker"
-                      style={{
-                        top: '4px',
-                        left: '4px',
-                        width: `${Math.max(stickerConfig.width, 200)}px`, // Make input wider
-                        height: `${stickerConfig.height}px`,
-                        zIndex: 20,
-                        color: 'white',
-                        fontSize: '28px',
-                        lineHeight: '1.1',
-                        padding: '2px',
-                        background: 'rgba(0,0,0,0.9)', // Even more visible background
-                        border: '2px solid white',
-                        borderRadius: '2px',
-                        outline: 'none',
-                      }}
-                      placeholder="Type here..."
-                    />
-                  )}
+                    ref={el => {
+                      textStickerRefs.current[index] = el;
+                    }}
+                  ></div>
                 </div>
               );
             }
