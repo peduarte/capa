@@ -18,7 +18,6 @@ export const DownloadButton = ({
   frames,
   frameOrder,
   filmStock,
-  rotation = 0,
   stickers = [],
   className = '',
   isDemo = false,
@@ -137,7 +136,6 @@ export const DownloadButton = ({
           frames: processedFrames,
           frameOrder,
           filmStock,
-          rotation,
           stickers,
         }),
       });

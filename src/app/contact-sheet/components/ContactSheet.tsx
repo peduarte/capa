@@ -23,9 +23,8 @@ interface ContactSheetProps {
   ref: React.RefObject<HTMLDivElement | null>;
   onFrameUpdate?: (frameId: string, updatedFrame: FrameData) => void;
   onImageDelete?: (frameNumber: number) => void;
-  onStickerUpdate?: (stickers: Sticker[]) => void;
+  onStickerChange?: (stickers: Sticker[]) => void;
   disableLoupe?: boolean;
-  onFocusedTextStickerChange?: (color: TextColor | null) => void;
   onFocusedStickerIndexChange?: (index: number) => void;
 }
 
@@ -38,9 +37,8 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
       stickers,
       onFrameUpdate,
       onImageDelete,
-      onStickerUpdate,
+      onStickerChange,
       disableLoupe = false,
-      onFocusedTextStickerChange,
       onFocusedStickerIndexChange,
     },
     ref
@@ -177,26 +175,6 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
       setEditingStickerIndex(-1);
     }, [selectedToolbarAction]);
 
-    // Communicate focused text sticker color to parent
-    useEffect(() => {
-      if (onFocusedTextStickerChange) {
-        if (
-          focusedStickerIndex >= 0 &&
-          localStickers[focusedStickerIndex]?.type === 'text'
-        ) {
-          const focusedSticker = localStickers[focusedStickerIndex];
-          const color = focusedSticker.color;
-          // Find the matching TextColor key for this color value
-          const colorKey = Object.entries(TEXT_COLORS).find(
-            ([key, value]) => value === color
-          )?.[0] as TextColor;
-          onFocusedTextStickerChange(colorKey || 'white');
-        } else {
-          onFocusedTextStickerChange(null);
-        }
-      }
-    }, [focusedStickerIndex, localStickers, onFocusedTextStickerChange]);
-
     // Communicate focused sticker index to parent
     useEffect(() => {
       if (onFocusedStickerIndexChange) {
@@ -252,7 +230,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
       };
 
       const handleGlobalMouseUp = () => {
-        if (isDraggingSticker && draggingStickerIndex >= 0 && onStickerUpdate) {
+        if (isDraggingSticker && draggingStickerIndex >= 0 && onStickerChange) {
           // Check for sticker deletion before resetting drag state
           if (selectedToolbarAction.startsWith('sticker-')) {
             const currentSticker = localStickers[draggingStickerIndex];
@@ -272,14 +250,14 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
               const updatedStickers = localStickers.filter(
                 (_, index) => index !== draggingStickerIndex
               );
-              onStickerUpdate(updatedStickers);
+              onStickerChange(updatedStickers);
             } else {
               // Commit the final position to parent
-              onStickerUpdate(localStickers);
+              onStickerChange(localStickers);
             }
           } else {
             // Commit the final position to parent
-            onStickerUpdate(localStickers);
+            onStickerChange(localStickers);
           }
         }
 
@@ -301,7 +279,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
       localStickers,
       dragStartPosition,
       selectedToolbarAction,
-      onStickerUpdate,
+      onStickerChange,
     ]);
 
     // Internal sticker mouse down handler
@@ -395,7 +373,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
       if (
         (selectedToolbarAction.startsWith('sticker-') ||
           selectedToolbarAction === 'text') &&
-        onStickerUpdate
+        onStickerChange
       ) {
         // If a sticker is already focused, just unfocus it (don't place new)
         if (focusedStickerIndex !== -1) {
@@ -411,8 +389,8 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
                 i === editingStickerIndex ? { ...s, text: finalText } : s
               );
               setLocalStickers(updatedStickers);
-              if (onStickerUpdate) {
-                onStickerUpdate(updatedStickers);
+              if (onStickerChange) {
+                onStickerChange(updatedStickers);
               }
             }
           }
@@ -467,7 +445,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
 
         const newStickers = [...(localStickers || []), newSticker];
         setLocalStickers(newStickers);
-        onStickerUpdate?.(newStickers); // Commit new sticker immediately
+        onStickerChange?.(newStickers); // Commit new sticker immediately
 
         // Focus the newly created sticker with a small delay to ensure rendering
         const newStickerIndex = newStickers.length - 1;
@@ -492,8 +470,8 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
               i === editingStickerIndex ? { ...s, text: finalText } : s
             );
             setLocalStickers(updatedStickers);
-            if (onStickerUpdate) {
-              onStickerUpdate(updatedStickers);
+            if (onStickerChange) {
+              onStickerChange(updatedStickers);
             }
           }
         }
@@ -552,7 +530,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
               stickers={localStickers}
               onFrameUpdate={() => {}} // No-op for loupe
               onImageDelete={() => {}} // No-op for loupe
-              onStickerUpdate={() => {}} // No-op for loupe
+              onStickerChange={() => {}} // No-op for loupe
               disableLoupe={true} // Prevent recursive loupe rendering
             />
           </div>
@@ -681,8 +659,8 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
                             i === index ? { ...s, text: finalText } : s
                           );
                           setLocalStickers(updatedStickers);
-                          if (onStickerUpdate) {
-                            onStickerUpdate(updatedStickers);
+                          if (onStickerChange) {
+                            onStickerChange(updatedStickers);
                           }
                           setEditingStickerIndex(-1);
                           setFocusedStickerIndex(-1);
@@ -698,8 +676,8 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
                           i === index ? { ...s, text: finalText } : s
                         );
                         setLocalStickers(updatedStickers);
-                        if (onStickerUpdate) {
-                          onStickerUpdate(updatedStickers);
+                        if (onStickerChange) {
+                          onStickerChange(updatedStickers);
                         }
                         setEditingStickerIndex(-1);
                         setFocusedStickerIndex(-1);

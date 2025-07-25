@@ -12,14 +12,15 @@ import {
   ActionDotIcon,
   ActionTextIcon,
 } from './Icons';
-import { TextColor, TEXT_COLORS } from '../utils/constants';
+import { TextColor, TEXT_COLORS, Sticker } from '../utils/constants';
 
 interface ToolbarProps {
   selectedAction: string;
   onActionChange: (action: string) => void;
   hideLoupeOption?: boolean;
-  selectedTextColor?: TextColor | null;
-  onTextColorChange?: (color: TextColor) => void;
+  stickers?: Sticker[];
+  focusedStickerIndex?: number;
+  onStickerChange?: (stickers: Sticker[]) => void;
 }
 
 // Custom tooltip component following Radix pattern
@@ -49,9 +50,43 @@ export const Toolbar = ({
   selectedAction,
   onActionChange,
   hideLoupeOption = false,
-  selectedTextColor = null,
-  onTextColorChange,
+  stickers = [],
+  focusedStickerIndex = -1,
+  onStickerChange,
 }: ToolbarProps) => {
+  // Derive selected text color from stickers state
+  const selectedTextColor = (() => {
+    if (
+      focusedStickerIndex >= 0 &&
+      stickers[focusedStickerIndex]?.type === 'text'
+    ) {
+      const focusedSticker = stickers[focusedStickerIndex];
+      const color = focusedSticker.color;
+      // Find the matching TextColor key for this color value
+      const colorKey = Object.entries(TEXT_COLORS).find(
+        ([key, value]) => value === color
+      )?.[0] as TextColor;
+      return colorKey || 'white';
+    }
+    return null;
+  })();
+
+  const handleColorChange = (color: TextColor) => {
+    if (
+      focusedStickerIndex >= 0 &&
+      stickers[focusedStickerIndex]?.type === 'text' &&
+      onStickerChange
+    ) {
+      const updatedStickers = stickers.map((sticker, index) => {
+        if (index === focusedStickerIndex) {
+          return { ...sticker, color: TEXT_COLORS[color] };
+        }
+        return sticker;
+      });
+      onStickerChange(updatedStickers);
+    }
+  };
+
   return (
     <ToggleGroup.Root
       className="flex gap-1 items-center space-x-1 text-sm"
@@ -130,66 +165,64 @@ export const Toolbar = ({
 
       {/* conditionally display elements in this div based on the selected action */}
       <div>
-        {selectedAction === 'text' &&
-          onTextColorChange &&
-          selectedTextColor && (
-            <Select.Root
-              value={selectedTextColor}
-              onValueChange={value => onTextColorChange(value as TextColor)}
-            >
-              <Select.Trigger className="px-2 py-1 text-xs text-white rounded hover:bg-white/20 focus:outline-none flex items-center justify-between text-nowrap">
-                <div className="flex items-center space-x-2">
-                  <div
-                    className="w-3 h-3 rounded border border-white/30"
-                    style={{ backgroundColor: TEXT_COLORS[selectedTextColor] }}
-                  />
-                  <span className="capitalize">{selectedTextColor}</span>
-                </div>
-                <Select.Icon className="ml-1">
-                  <svg
-                    width="15"
-                    height="15"
-                    viewBox="0 0 15 15"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M3.13523 6.15803C3.3241 5.95657 3.64052 5.94637 3.84197 6.13523L7.5 9.56464L11.158 6.13523C11.3595 5.94637 11.6759 5.95657 11.8648 6.15803C12.0536 6.35949 12.0434 6.67591 11.842 6.86477L7.84197 10.6148C7.64964 10.7951 7.35036 10.7951 7.15803 10.6148L3.15803 6.86477C2.95657 6.67591 2.94637 6.35949 3.13523 6.15803Z"
-                      fill="currentColor"
-                      fillRule="evenodd"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </Select.Icon>
-              </Select.Trigger>
-              <Select.Portal>
-                <Select.Content
-                  position="popper"
-                  className="bg-black border border-gray-600 rounded shadow-lg z-50"
+        {selectedAction === 'text' && onStickerChange && selectedTextColor && (
+          <Select.Root
+            value={selectedTextColor}
+            onValueChange={value => handleColorChange(value as TextColor)}
+          >
+            <Select.Trigger className="px-2 py-1 text-xs text-white rounded hover:bg-white/20 focus:outline-none flex items-center justify-between text-nowrap">
+              <div className="flex items-center space-x-2">
+                <div
+                  className="w-3 h-3 rounded border border-white/30"
+                  style={{ backgroundColor: TEXT_COLORS[selectedTextColor] }}
+                />
+                <span className="capitalize">{selectedTextColor}</span>
+              </div>
+              <Select.Icon className="ml-1">
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 15 15"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
                 >
-                  <Select.Viewport className="p-1">
-                    {Object.entries(TEXT_COLORS).map(
-                      ([colorName, colorValue]) => (
-                        <Select.Item
-                          key={colorName}
-                          value={colorName}
-                          className="text-sm text-white px-3 py-1 rounded cursor-pointer hover:bg-white/20 focus:bg-white focus:text-black focus:outline-none flex items-center space-x-2"
-                        >
-                          <div
-                            className="w-3 h-3 rounded border border-white/30"
-                            style={{ backgroundColor: colorValue }}
-                          />
-                          <Select.ItemText className="capitalize">
-                            {colorName}
-                          </Select.ItemText>
-                        </Select.Item>
-                      )
-                    )}
-                  </Select.Viewport>
-                </Select.Content>
-              </Select.Portal>
-            </Select.Root>
-          )}
+                  <path
+                    d="M3.13523 6.15803C3.3241 5.95657 3.64052 5.94637 3.84197 6.13523L7.5 9.56464L11.158 6.13523C11.3595 5.94637 11.6759 5.95657 11.8648 6.15803C12.0536 6.35949 12.0434 6.67591 11.842 6.86477L7.84197 10.6148C7.64964 10.7951 7.35036 10.7951 7.15803 10.6148L3.15803 6.86477C2.95657 6.67591 2.94637 6.35949 3.13523 6.15803Z"
+                    fill="currentColor"
+                    fillRule="evenodd"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </Select.Icon>
+            </Select.Trigger>
+            <Select.Portal>
+              <Select.Content
+                position="popper"
+                className="bg-black border border-gray-600 rounded shadow-lg z-50"
+              >
+                <Select.Viewport className="p-1">
+                  {Object.entries(TEXT_COLORS).map(
+                    ([colorName, colorValue]) => (
+                      <Select.Item
+                        key={colorName}
+                        value={colorName}
+                        className="text-sm text-white px-3 py-1 rounded cursor-pointer hover:bg-white/20 focus:bg-white focus:text-black focus:outline-none flex items-center space-x-2"
+                      >
+                        <div
+                          className="w-3 h-3 rounded border border-white/30"
+                          style={{ backgroundColor: colorValue }}
+                        />
+                        <Select.ItemText className="capitalize">
+                          {colorName}
+                        </Select.ItemText>
+                      </Select.Item>
+                    )
+                  )}
+                </Select.Viewport>
+              </Select.Content>
+            </Select.Portal>
+          </Select.Root>
+        )}
       </div>
 
       <TooltipWrapper content="Delete Frame(D)">

@@ -16,13 +16,9 @@ import {
 import {
   FilmStock,
   FILM_STOCKS,
-  MEASUREMENTS,
   Frame,
   ContactSheetState,
   Sticker,
-  STICKER_CONFIGS,
-  TextColor,
-  TEXT_COLORS,
 } from './contact-sheet/utils/constants';
 import { defaultFrameData } from './contact-sheet/utils/defaultFrameData';
 
@@ -47,10 +43,7 @@ function ContactSheetPageContent() {
     useState<FilmStock>('ilford-hp5');
   const [selectedToolbarAction, setSelectedToolbarAction] =
     useState<string>('');
-  const [rotation, setRotation] = useState<number>(0); // 0, 90, 180, 270 degrees
   const [stickers, setStickers] = useState<Sticker[]>([]);
-  const [focusedTextStickerColor, setFocusedTextStickerColor] =
-    useState<TextColor | null>(null);
   const [focusedStickerIndex, setFocusedStickerIndex] = useState<number>(-1);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadedObjectUrlsRef = useRef<string[]>([]); // Track blob URLs for cleanup
@@ -223,7 +216,6 @@ function ContactSheetPageContent() {
     setStickers([]);
     setShowDemo(false);
     setErrors([]);
-    setRotation(0); // Reset rotation
   }, []);
 
   // Handle upload button click
@@ -415,6 +407,11 @@ function ContactSheetPageContent() {
     [contactSheetState, currentImages]
   );
 
+  // Unified sticker change handler for both Toolbar and ContactSheet
+  const handleStickerChange = useCallback((updatedStickers: Sticker[]) => {
+    setStickers(updatedStickers);
+  }, []);
+
   return (
     <Tooltip.Provider>
       <div className="min-h-screen relative z-0">
@@ -460,7 +457,6 @@ function ContactSheetPageContent() {
                 frames={contactSheetState.frames}
                 frameOrder={contactSheetState.frameOrder}
                 filmStock={selectedFilmStock}
-                rotation={rotation}
                 stickers={stickers}
                 isDemo={showDemo}
                 onDownloadStateChange={setIsDownloading}
@@ -519,80 +515,14 @@ function ContactSheetPageContent() {
               </Select.Root>
             </div>
 
-            {/* Rotate Buttons */}
-            {/* <div className="flex items-center space-x-1">
-              <Tooltip.Root>
-                <Tooltip.Trigger asChild>
-                  <button
-                    onClick={rotateContactSheetLeft}
-                    className="px-2 py-1 text-xs text-white rounded hover:bg-white/20 focus:outline-none flex items-center"
-                  >
-                    <RotateCounterClockwiseIcon className="w-4 h-4" />
-                  </button>
-                </Tooltip.Trigger>
-                <Tooltip.Portal>
-                  <Tooltip.Content
-                    className="bg-black text-white px-2 py-1 text-xs rounded border border-gray-600"
-                    sideOffset={5}
-                  >
-                    Rotate left
-                    <Tooltip.Arrow className="fill-black" />
-                  </Tooltip.Content>
-                </Tooltip.Portal>
-              </Tooltip.Root>
-              <Tooltip.Root>
-                <Tooltip.Trigger asChild>
-                  <button
-                    onClick={rotateContactSheetRight}
-                    className="px-2 py-1 text-xs text-white rounded hover:bg-white/20 focus:outline-none flex items-center"
-                  >
-                    <RotateCounterClockwiseIcon
-                      className="w-4 h-4"
-                      style={{ transform: 'scaleX(-1)' }}
-                    />
-                  </button>
-                </Tooltip.Trigger>
-                <Tooltip.Portal>
-                  <Tooltip.Content
-                    className="bg-black text-white px-2 py-1 text-xs rounded border border-gray-600"
-                    sideOffset={5}
-                  >
-                    Rotate right
-                    <Tooltip.Arrow className="fill-black" />
-                  </Tooltip.Content>
-                </Tooltip.Portal>
-              </Tooltip.Root>
-            </div> */}
-
-            {/* Separator */}
-            {/* <div className="w-px h-6 bg-gray-500"></div> */}
-
             {/* Center-Right: Highlight Type Selector */}
             <Toolbar
               selectedAction={selectedToolbarAction}
               onActionChange={setSelectedToolbarAction}
               hideLoupeOption={isTouchDevice}
-              selectedTextColor={focusedTextStickerColor}
-              onTextColorChange={color => {
-                // Update the focused text sticker's color
-                if (
-                  focusedStickerIndex >= 0 &&
-                  focusedTextStickerColor !== null
-                ) {
-                  setStickers(prev =>
-                    prev.map((sticker, index) => {
-                      if (
-                        index === focusedStickerIndex &&
-                        sticker.type === 'text'
-                      ) {
-                        return { ...sticker, color: TEXT_COLORS[color] };
-                      }
-                      return sticker;
-                    })
-                  );
-                  setFocusedTextStickerColor(color);
-                }
-              }}
+              stickers={stickers}
+              focusedStickerIndex={focusedStickerIndex}
+              onStickerChange={handleStickerChange}
             />
           </div>
         )}
@@ -671,7 +601,6 @@ function ContactSheetPageContent() {
                 selectedToolbarAction && selectedToolbarAction !== 'loupe'
                   ? 'crosshair'
                   : 'default',
-              transform: `rotate(${rotation}deg)`,
               minWidth: '0',
             }}
           >
@@ -681,10 +610,7 @@ function ContactSheetPageContent() {
               filmStock={selectedFilmStock}
               selectedToolbarAction={selectedToolbarAction}
               stickers={stickers}
-              onStickerUpdate={setStickers}
-              onFocusedTextStickerChange={color =>
-                setFocusedTextStickerColor(color)
-              }
+              onStickerChange={handleStickerChange}
               onFocusedStickerIndexChange={index =>
                 setFocusedStickerIndex(index)
               }
