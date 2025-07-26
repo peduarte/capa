@@ -370,6 +370,13 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
 
     // Global event handlers for sticker dragging
     useEffect(() => {
+      // Update cursor during drag
+      if (isDraggingSticker) {
+        document.body.style.cursor = 'grabbing';
+      } else {
+        document.body.style.cursor = '';
+      }
+
       const handleGlobalMouseMove = (e: MouseEvent) => {
         if (isDraggingSticker && draggingStickerId && contactSheetRef.current) {
           const contactSheetRect =
@@ -464,6 +471,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
         setIsDraggingSticker(false);
         setDraggingStickerId(null);
         setIsNewlyPlacedSticker(false);
+        document.body.style.cursor = ''; // Reset cursor
       };
 
       window.addEventListener('mousemove', handleGlobalMouseMove);
@@ -866,9 +874,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
                         minHeight: `${Math.max(stickerConfig.height, 32)}px`,
                         cursor: isEditing
                           ? 'text'
-                          : isFocused && !isEditing
-                            ? 'grab'
-                            : 'pointer',
+                          : 'grab',
                         zIndex: 10,
                         color: sticker.color || TEXT_COLORS.white,
                         fontSize: '18px',
@@ -1007,7 +1013,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
                     backgroundSize: 'cover',
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center',
-                    cursor: 'pointer',
+                    cursor: 'grab',
                     zIndex: 10,
                     userSelect: 'none',
                     transform: stickerConfig.transform || '',
