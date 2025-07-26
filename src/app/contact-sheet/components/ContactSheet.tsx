@@ -250,7 +250,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
           } else if (focusedSticker.type === 'twin-check') {
             expectedAction = 'sticker-twin-check';
           }
-          
+
           // Clear focus if toolbar action doesn't match the focused sticker type
           if (selectedToolbarAction !== expectedAction) {
             setFocusedStickerId(null);
@@ -467,7 +467,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
       // Check if the click is on a sticker element
       const target = event.target as Element;
       const isClickingOnSticker = target.closest('[data-sticker-id]') !== null;
-      
+
       // If clicking on a sticker, the sticker's onMouseDown should have called stopPropagation
       // This handler should not run for sticker clicks
       if (isClickingOnSticker) {
@@ -778,7 +778,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
                         whiteSpace: 'nowrap',
                         userSelect: isEditing ? 'text' : 'none',
                       }}
-                      onInput={event => {
+                      onInput={() => {
                         // Don't update state during typing - let contenteditable handle it naturally
                         // We'll capture the final value when editing is committed
                       }}
