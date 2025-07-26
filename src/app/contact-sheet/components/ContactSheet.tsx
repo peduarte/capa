@@ -937,19 +937,17 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
                       onMouseDown={event => {
                         event.stopPropagation();
 
-                        const currentlyFocused =
-                          getFocusedStickerId() === stickerId;
                         const currentlyEditing =
                           getEditingStickerId() === stickerId;
 
-                        // Always focus this sticker when clicked (handles sticker-to-sticker transitions)
-                        setFocusedStickerId(stickerId);
-
-                        if (currentlyFocused && !currentlyEditing) {
-                          // If this sticker was already focused but not editing: start dragging
-                          handleStickerMouseDown(stickerId, event);
-                        }
                         // If already editing, let the contenteditable handle it
+                        if (currentlyEditing) {
+                          return;
+                        }
+
+                        // Always focus this sticker when clicked and start dragging immediately
+                        setFocusedStickerId(stickerId);
+                        handleStickerMouseDown(stickerId, event);
                       }}
                       onDoubleClick={event => {
                         event.stopPropagation();
@@ -1019,16 +1017,9 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
                   onMouseDown={event => {
                     event.stopPropagation();
 
-                    const currentlyFocused =
-                      getFocusedStickerId() === stickerId;
-
-                    // Always focus this sticker when clicked (handles sticker-to-sticker transitions)
+                    // Always focus this sticker when clicked and start dragging immediately
                     setFocusedStickerId(stickerId);
-
-                    if (currentlyFocused) {
-                      // If this sticker was already focused: start dragging
-                      handleStickerMouseDown(stickerId, event);
-                    }
+                    handleStickerMouseDown(stickerId, event);
                   }}
                 />
               );
