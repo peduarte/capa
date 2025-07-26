@@ -19,6 +19,7 @@ import {
   Frame,
   ContactSheetState,
   Sticker,
+  TEXT_COLORS,
 } from './contact-sheet/utils/constants';
 import { defaultFrameData } from './contact-sheet/utils/defaultFrameData';
 
@@ -50,6 +51,9 @@ function ContactSheetPageContent() {
   const [focusedTextStickerId, setFocusedTextStickerId] = useState<
     string | null
   >(null);
+  const [lastUsedTextColor, setLastUsedTextColor] = useState<string>(
+    TEXT_COLORS.white
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadedObjectUrlsRef = useRef<string[]>([]); // Track blob URLs for cleanup
 
@@ -568,7 +572,11 @@ function ContactSheetPageContent() {
               onActionChange={setSelectedToolbarAction}
               hideLoupeOption={isTouchDevice}
               selectedTextColor={selectedTextSticker?.color}
+              lastUsedTextColor={lastUsedTextColor}
               onTextColorChange={(color: string) => {
+                // Remember this color for future text stickers
+                setLastUsedTextColor(color);
+
                 // Update the color of the focused text sticker
                 if (focusedTextStickerId && stickerData[focusedTextStickerId]) {
                   const updatedStickerData = {
@@ -669,6 +677,7 @@ function ContactSheetPageContent() {
               selectedToolbarAction={selectedToolbarAction}
               stickerData={stickerData}
               stickerOrder={stickerOrder}
+              lastUsedTextColor={lastUsedTextColor}
               onStickerDataChange={handleStickerDataChange}
               onSelectedActionChange={handleSelectedActionChange}
               onFocusedStickerChange={handleFocusedStickerChange}

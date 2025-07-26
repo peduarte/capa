@@ -19,6 +19,7 @@ interface ContactSheetProps {
   selectedToolbarAction: string;
   stickerData?: Record<string, Sticker>;
   stickerOrder?: string[];
+  lastUsedTextColor?: string;
   ref: React.RefObject<HTMLDivElement | null>;
   onFrameUpdate?: (frameId: string, updatedFrame: FrameData) => void;
   onImageDelete?: (frameNumber: number) => void;
@@ -39,6 +40,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
       selectedToolbarAction,
       stickerData,
       stickerOrder,
+      lastUsedTextColor,
       onFrameUpdate,
       onImageDelete,
       onStickerDataChange,
@@ -647,7 +649,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
           top: stickerTop,
           left: stickerLeft,
           text: stickerType === 'text' ? 'Edit me' : undefined,
-          color: stickerType === 'text' ? TEXT_COLORS.white : undefined,
+          color: stickerType === 'text' ? (lastUsedTextColor || TEXT_COLORS.white) : undefined,
         };
 
         // Generate ID for new sticker
@@ -774,6 +776,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
               selectedToolbarAction="" // Disable interactions in loupe
               stickerData={localStickerData}
               stickerOrder={localStickerOrder}
+              lastUsedTextColor={lastUsedTextColor}
               onFrameUpdate={() => {}} // No-op for loupe
               onImageDelete={() => {}} // No-op for loupe
               onStickerDataChange={() => {}} // No-op for loupe
@@ -843,7 +846,6 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
 
               const stickerConfig = STICKER_CONFIGS[sticker.type];
               if (!stickerConfig) return null;
-
 
               // Handle text stickers differently
               if (sticker.type === 'text') {

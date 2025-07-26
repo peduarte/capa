@@ -19,6 +19,7 @@ interface ToolbarProps {
   onActionChange: (action: string) => void;
   hideLoupeOption?: boolean;
   selectedTextColor?: string;
+  lastUsedTextColor?: string;
   onTextColorChange?: (color: string) => void;
 }
 
@@ -51,6 +52,7 @@ export const Toolbar = ({
   onActionChange,
   hideLoupeOption = false,
   selectedTextColor,
+  lastUsedTextColor,
   onTextColorChange,
 }: ToolbarProps) => {
   // Convert color value to color key for display
@@ -61,6 +63,9 @@ export const Toolbar = ({
     )?.[0] as TextColor;
     return colorKey || 'white';
   };
+
+  // Get the effective color to display (focused sticker color or last used color)
+  const effectiveTextColor = selectedTextColor || lastUsedTextColor || TEXT_COLORS.white;
 
   const handleColorChange = (color: TextColor) => {
     if (onTextColorChange) {
@@ -156,7 +161,7 @@ export const Toolbar = ({
       <div>
         {selectedAction === 'text' && onTextColorChange && (
           <Select.Root
-            value={getColorKey(selectedTextColor)}
+            value={getColorKey(effectiveTextColor)}
             onValueChange={value => handleColorChange(value as TextColor)}
           >
             <Select.Trigger
@@ -167,11 +172,11 @@ export const Toolbar = ({
                 <div
                   className="w-3 h-3 rounded border border-white/30"
                   style={{
-                    backgroundColor: selectedTextColor || TEXT_COLORS.white,
+                    backgroundColor: effectiveTextColor,
                   }}
                 />
                 <span className="capitalize">
-                  {getColorKey(selectedTextColor)}
+                  {getColorKey(effectiveTextColor)}
                 </span>
               </div>
               <Select.Icon className="ml-1">
