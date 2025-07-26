@@ -12,15 +12,14 @@ import {
   ActionDotIcon,
   ActionTextIcon,
 } from './Icons';
-import { TextColor, TEXT_COLORS, Sticker } from '../utils/constants';
+import { TextColor, TEXT_COLORS } from '../utils/constants';
 
 interface ToolbarProps {
   selectedAction: string;
   onActionChange: (action: string) => void;
   hideLoupeOption?: boolean;
-  stickers?: Sticker[];
-  focusedStickerIndex?: number;
-  onStickerChange?: (stickers: Sticker[]) => void;
+  selectedTextColor?: string;
+  onTextColorChange?: (color: string) => void;
 }
 
 // Custom tooltip component following Radix pattern
@@ -51,40 +50,21 @@ export const Toolbar = ({
   selectedAction,
   onActionChange,
   hideLoupeOption = false,
-  stickers = [],
-  focusedStickerIndex = -1,
-  onStickerChange,
+  selectedTextColor,
+  onTextColorChange,
 }: ToolbarProps) => {
-  // Derive selected text color from stickers state
-  const selectedTextColor = (() => {
-    if (
-      focusedStickerIndex >= 0 &&
-      stickers[focusedStickerIndex]?.type === 'text'
-    ) {
-      const focusedSticker = stickers[focusedStickerIndex];
-      const color = focusedSticker.color;
-      // Find the matching TextColor key for this color value
-      const colorKey = Object.entries(TEXT_COLORS).find(
-        ([key, value]) => value === color
-      )?.[0] as TextColor;
-      return colorKey || 'white';
-    }
-    return null;
-  })();
+  // Convert color value to color key for display
+  const getColorKey = (colorValue?: string): TextColor => {
+    if (!colorValue) return 'white';
+    const colorKey = Object.entries(TEXT_COLORS).find(
+      ([key, value]) => value === colorValue
+    )?.[0] as TextColor;
+    return colorKey || 'white';
+  };
 
   const handleColorChange = (color: TextColor) => {
-    if (
-      focusedStickerIndex >= 0 &&
-      stickers[focusedStickerIndex]?.type === 'text' &&
-      onStickerChange
-    ) {
-      const updatedStickers = stickers.map((sticker, index) => {
-        if (index === focusedStickerIndex) {
-          return { ...sticker, color: TEXT_COLORS[color] };
-        }
-        return sticker;
-      });
-      onStickerChange(updatedStickers);
+    if (onTextColorChange) {
+      onTextColorChange(TEXT_COLORS[color]);
     }
   };
 
@@ -174,9 +154,9 @@ export const Toolbar = ({
 
       {/* conditionally display elements in this div based on the selected action */}
       <div>
-        {selectedAction === 'text' && onStickerChange && selectedTextColor && (
+        {selectedAction === 'text' && onTextColorChange && (
           <Select.Root
-            value={selectedTextColor}
+            value={getColorKey(selectedTextColor)}
             onValueChange={value => handleColorChange(value as TextColor)}
           >
             <Select.Trigger
@@ -186,9 +166,9 @@ export const Toolbar = ({
               <div className="flex items-center space-x-2">
                 <div
                   className="w-3 h-3 rounded border border-white/30"
-                  style={{ backgroundColor: TEXT_COLORS[selectedTextColor] }}
+                  style={{ backgroundColor: selectedTextColor || TEXT_COLORS.white }}
                 />
-                <span className="capitalize">{selectedTextColor}</span>
+                <span className="capitalize">{getColorKey(selectedTextColor)}</span>
               </div>
               <Select.Icon className="ml-1">
                 <svg
