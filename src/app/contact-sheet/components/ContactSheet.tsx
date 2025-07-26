@@ -752,7 +752,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
                       key={`text-${stickerId}-${isEditing ? 'editing' : 'display'}`}
                       contentEditable={isEditing}
                       suppressContentEditableWarning={true}
-                      className="absolute select-none font-permanent-marker"
+                      className="absolute select-none font-rock-salt"
                       style={{
                         top: '4px',
                         left: '4px',
@@ -765,7 +765,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
                             : 'pointer',
                         zIndex: 10,
                         color: sticker.color || TEXT_COLORS.white,
-                        fontSize: '28px',
+                        fontSize: '18px',
                         lineHeight: '1.1',
                         padding: '2px',
                         outline: isFocused ? '2px solid white' : 'none',

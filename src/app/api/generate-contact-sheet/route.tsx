@@ -10,11 +10,11 @@ import {
   ContactSheetState,
 } from '../../contact-sheet/utils/constants';
 
-// Load the Permanent Marker font
-async function loadPermanentMarkerFont() {
+// Load the Rock Salt font
+async function loadRockSaltFont() {
   try {
     const response = await fetch(
-      'https://fonts.googleapis.com/css2?family=Permanent+Marker:wght@400&display=swap'
+      'https://fonts.googleapis.com/css2?family=Rock+Salt:wght@400&display=swap'
     );
 
     if (!response.ok) {
@@ -38,7 +38,7 @@ async function loadPermanentMarkerFont() {
 
     return fontResponse.arrayBuffer();
   } catch (error) {
-    console.warn('Failed to load Permanent Marker font:', error);
+    console.warn('Failed to load Rock Salt font:', error);
     // Return null to indicate font loading failed
     return null;
   }
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
     console.log('Base URL:', baseUrl);
 
     // Load the font
-    const permanentMarkerFont = await loadPermanentMarkerFont();
+    const rockSaltFont = await loadRockSaltFont();
 
     // Calculate dimensions with high DPI scaling
     const scaleFactor = 2; // 2x scaling for high resolution output
@@ -138,9 +138,7 @@ export async function POST(request: NextRequest) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontFamily: permanentMarkerFont
-            ? 'Permanent Marker, cursive'
-            : 'serif',
+          fontFamily: rockSaltFont ? 'Rock Salt, cursive' : 'serif',
         }}
       >
         <ContactSheetContent
@@ -157,11 +155,11 @@ export async function POST(request: NextRequest) {
     return new ImageResponse(contactSheet, {
       width: dimensions.width,
       height: dimensions.height,
-      fonts: permanentMarkerFont
+      fonts: rockSaltFont
         ? [
             {
-              name: 'Permanent Marker',
-              data: permanentMarkerFont,
+              name: 'Rock Salt',
+              data: rockSaltFont,
               style: 'normal',
               weight: 400,
             },
@@ -420,8 +418,8 @@ function ContactSheetContent({
                 minWidth: stickerConfig.width * scaleFactor,
                 minHeight: stickerConfig.height * scaleFactor,
                 color: 'white',
-                fontSize: 28 * scaleFactor,
-                fontFamily: 'Permanent Marker, serif',
+                fontSize: 18 * scaleFactor,
+                fontFamily: 'Rock Salt, serif',
                 lineHeight: 1.1,
                 zIndex: 30,
                 whiteSpace: 'nowrap',
