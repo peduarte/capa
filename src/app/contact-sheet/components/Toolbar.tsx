@@ -59,13 +59,14 @@ export const Toolbar = ({
   const getColorKey = (colorValue?: string): TextColor => {
     if (!colorValue) return 'white';
     const colorKey = Object.entries(TEXT_COLORS).find(
-      ([key, value]) => value === colorValue
+      ([, value]) => value === colorValue
     )?.[0] as TextColor;
     return colorKey || 'white';
   };
 
   // Get the effective color to display (focused sticker color or last used color)
-  const effectiveTextColor = selectedTextColor || lastUsedTextColor || TEXT_COLORS.white;
+  const effectiveTextColor =
+    selectedTextColor || lastUsedTextColor || TEXT_COLORS.white;
 
   const handleColorChange = (color: TextColor) => {
     if (onTextColorChange) {

@@ -649,7 +649,10 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
           top: stickerTop,
           left: stickerLeft,
           text: stickerType === 'text' ? 'Edit me' : undefined,
-          color: stickerType === 'text' ? (lastUsedTextColor || TEXT_COLORS.white) : undefined,
+          color:
+            stickerType === 'text'
+              ? lastUsedTextColor || TEXT_COLORS.white
+              : undefined,
         };
 
         // Generate ID for new sticker
