@@ -43,8 +43,13 @@ function ContactSheetPageContent() {
     useState<FilmStock>('ilford-hp5');
   const [selectedToolbarAction, setSelectedToolbarAction] =
     useState<string>('');
-  const [stickers, setStickers] = useState<Sticker[]>([]);
-  const [focusedStickerIndex, setFocusedStickerIndex] = useState<number>(-1);
+
+  // Object-based sticker state
+  const [stickerData, setStickerData] = useState<Record<string, Sticker>>({});
+  const [stickerOrder, setStickerOrder] = useState<string[]>([]);
+  const [focusedTextStickerId, setFocusedTextStickerId] = useState<
+    string | null
+  >(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadedObjectUrlsRef = useRef<string[]>([]); // Track blob URLs for cleanup
 
@@ -157,10 +162,7 @@ function ContactSheetPageContent() {
     // Focus and editing state is now managed internally by ContactSheet
   }, [selectedToolbarAction]);
 
-  // Check if we have any frames to work with
-  const shouldShowDemo = useMemo(() => {
-    return contactSheetState.frameOrder.length === 0 && !showDemo;
-  }, [contactSheetState.frameOrder.length, showDemo]);
+  // Check if we have any frames to work with (unused)
 
   // Demo frame data (loaded from external TypeScript file)
   const demoData: ContactSheetState = defaultFrameData;
@@ -213,7 +215,8 @@ function ContactSheetPageContent() {
     revokeObjectUrls(uploadedObjectUrlsRef.current);
     uploadedObjectUrlsRef.current = [];
     setContactSheetState({ frames: {}, frameOrder: [] });
-    setStickers([]);
+    setStickerData({});
+    setStickerOrder([]);
     setShowDemo(false);
     setErrors([]);
   }, []);
@@ -407,10 +410,47 @@ function ContactSheetPageContent() {
     [contactSheetState, currentImages]
   );
 
-  // Unified sticker change handler for both Toolbar and ContactSheet
-  const handleStickerChange = useCallback((updatedStickers: Sticker[]) => {
-    setStickers(updatedStickers);
+  // Helper functions for object-based sticker operations (unused in parent)
+
+  const handleStickerDataChange = useCallback(
+    (
+      updatedStickerData: Record<string, Sticker>,
+      updatedStickerOrder?: string[]
+    ) => {
+      setStickerData(updatedStickerData);
+      if (updatedStickerOrder) {
+        setStickerOrder(updatedStickerOrder);
+      }
+    },
+    []
+  );
+
+  const handleSelectedActionChange = useCallback((action: string) => {
+    setSelectedToolbarAction(action);
   }, []);
+
+  const handleFocusedStickerChange = useCallback(
+    (stickerId: string | null) => {
+      // Set focused text sticker ID only for text stickers
+      if (stickerId && stickerData[stickerId]?.type === 'text') {
+        setFocusedTextStickerId(stickerId);
+      } else {
+        setFocusedTextStickerId(null);
+      }
+
+      // Don't automatically change toolbar action when focusing stickers
+      // This allows users to focus one sticker type while having a different tool selected
+    },
+    [stickerData]
+  );
+
+  // Get selected text sticker for toolbar
+  const selectedTextSticker = useMemo(() => {
+    if (selectedToolbarAction === 'text' && focusedTextStickerId) {
+      return stickerData[focusedTextStickerId] || null;
+    }
+    return null;
+  }, [selectedToolbarAction, focusedTextStickerId, stickerData]);
 
   return (
     <Tooltip.Provider>
@@ -457,7 +497,7 @@ function ContactSheetPageContent() {
                 frames={contactSheetState.frames}
                 frameOrder={contactSheetState.frameOrder}
                 filmStock={selectedFilmStock}
-                stickers={stickers}
+                stickers={stickerOrder.map(id => stickerData[id])}
                 isDemo={showDemo}
                 onDownloadStateChange={setIsDownloading}
               />
@@ -520,9 +560,20 @@ function ContactSheetPageContent() {
               selectedAction={selectedToolbarAction}
               onActionChange={setSelectedToolbarAction}
               hideLoupeOption={isTouchDevice}
-              stickers={stickers}
-              focusedStickerIndex={focusedStickerIndex}
-              onStickerChange={handleStickerChange}
+              selectedTextColor={selectedTextSticker?.color}
+              onTextColorChange={(color: string) => {
+                // Update the color of the focused text sticker
+                if (focusedTextStickerId && stickerData[focusedTextStickerId]) {
+                  const updatedStickerData = {
+                    ...stickerData,
+                    [focusedTextStickerId]: {
+                      ...stickerData[focusedTextStickerId],
+                      color,
+                    },
+                  };
+                  setStickerData(updatedStickerData);
+                }
+              }}
             />
           </div>
         )}
@@ -609,11 +660,11 @@ function ContactSheetPageContent() {
               frames={framesState}
               filmStock={selectedFilmStock}
               selectedToolbarAction={selectedToolbarAction}
-              stickers={stickers}
-              onStickerChange={handleStickerChange}
-              onFocusedStickerIndexChange={index =>
-                setFocusedStickerIndex(index)
-              }
+              stickerData={stickerData}
+              stickerOrder={stickerOrder}
+              onStickerDataChange={handleStickerDataChange}
+              onSelectedActionChange={handleSelectedActionChange}
+              onFocusedStickerChange={handleFocusedStickerChange}
               onFrameUpdate={(frameId, updatedFrame) => {
                 // Only update if it's not an empty frame
                 if (!frameId.startsWith('empty_')) {
