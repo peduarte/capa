@@ -343,6 +343,65 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
       setEditingStickerId,
     ]);
 
+    // Handle keyboard events for sticker deletion
+    useEffect(() => {
+      const handleKeyDown = (event: KeyboardEvent) => {
+        // Only handle backspace if no input/textarea is focused and no sticker is being edited
+        if (
+          document.activeElement?.tagName === 'INPUT' ||
+          document.activeElement?.tagName === 'TEXTAREA' ||
+          document.activeElement?.tagName === 'SELECT' ||
+          (document.activeElement as HTMLElement)?.isContentEditable
+        ) {
+          return;
+        }
+
+        if (event.key === 'Backspace') {
+          const focusedStickerId = getFocusedStickerId();
+          const editingStickerId = getEditingStickerId();
+
+          // Don't delete if a sticker is currently being edited
+          if (editingStickerId) {
+            return;
+          }
+
+          if (focusedStickerId && localStickerData[focusedStickerId]) {
+            event.preventDefault();
+
+            // Remove the focused sticker
+            const updatedStickerData = { ...localStickerData };
+            delete updatedStickerData[focusedStickerId];
+
+            const updatedStickerOrder = localStickerOrder.filter(
+              id => id !== focusedStickerId
+            );
+
+            // Update local state immediately
+            setLocalStickerData(updatedStickerData);
+            setLocalStickerOrder(updatedStickerOrder);
+
+            // Clear focus since the sticker no longer exists
+            setFocusedStickerId(null);
+
+            // Notify parent of changes
+            if (onStickerDataChange) {
+              onStickerDataChange(updatedStickerData, updatedStickerOrder);
+            }
+          }
+        }
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [
+      getFocusedStickerId,
+      getEditingStickerId,
+      localStickerData,
+      localStickerOrder,
+      setFocusedStickerId,
+      onStickerDataChange,
+    ]);
+
     // Track toolbar interactions to prevent clearing focused stickers
     const isToolbarInteractionRef = useRef(false);
 
