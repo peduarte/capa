@@ -438,8 +438,15 @@ function ContactSheetPageContent() {
         setFocusedTextStickerId(null);
       }
 
-      // Don't automatically change toolbar action when focusing stickers
-      // This allows users to focus one sticker type while having a different tool selected
+      // Update toolbar action when focusing stickers to match the sticker type
+      if (stickerId && stickerData[stickerId]) {
+        const stickerType = stickerData[stickerId].type;
+        if (stickerType === 'text') {
+          setSelectedToolbarAction('text');
+        } else {
+          setSelectedToolbarAction(`sticker-${stickerType}`);
+        }
+      }
     },
     [stickerData]
   );

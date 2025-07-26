@@ -32,3 +32,12 @@ body {
 radix-portal > div {
   z-index: 10;
 }
+
+/* DOM-based sticker focus management */
+[data-sticker-focused='true'] {
+  outline: 2px solid white !important;
+}
+
+[data-sticker-editing='true'] {
+  outline: 2px solid white !important;
+}
