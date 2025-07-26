@@ -166,9 +166,13 @@ export const Toolbar = ({
               <div className="flex items-center space-x-2">
                 <div
                   className="w-3 h-3 rounded border border-white/30"
-                  style={{ backgroundColor: selectedTextColor || TEXT_COLORS.white }}
+                  style={{
+                    backgroundColor: selectedTextColor || TEXT_COLORS.white,
+                  }}
                 />
-                <span className="capitalize">{getColorKey(selectedTextColor)}</span>
+                <span className="capitalize">
+                  {getColorKey(selectedTextColor)}
+                </span>
               </div>
               <Select.Icon className="ml-1">
                 <svg

@@ -22,8 +22,11 @@ interface ContactSheetProps {
   ref: React.RefObject<HTMLDivElement | null>;
   onFrameUpdate?: (frameId: string, updatedFrame: FrameData) => void;
   onImageDelete?: (frameNumber: number) => void;
-  onStickerDataChange?: (stickerData: Record<string, Sticker>, stickerOrder?: string[]) => void;
-  onActionChange?: (action: string) => void;
+  onStickerDataChange?: (
+    stickerData: Record<string, Sticker>,
+    stickerOrder?: string[]
+  ) => void;
+  onSelectedActionChange?: (action: string) => void;
   onFocusedStickerChange?: (stickerId: string | null) => void;
   disableLoupe?: boolean;
 }
@@ -39,7 +42,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
       onFrameUpdate,
       onImageDelete,
       onStickerDataChange,
-      onActionChange,
+      onSelectedActionChange,
       onFocusedStickerChange,
       disableLoupe = false,
     },
@@ -49,15 +52,24 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
     const contactSheetRef = useRef<HTMLDivElement>(null);
 
     // Internal state for focus and editing (using IDs instead of indices)
-    const [focusedStickerId, setFocusedStickerId] = useState<string | null>(null);
-    const [editingStickerId, setEditingStickerId] = useState<string | null>(null);
+    const [focusedStickerId, setFocusedStickerId] = useState<string | null>(
+      null
+    );
+    const [editingStickerId, setEditingStickerId] = useState<string | null>(
+      null
+    );
 
     // Internal state for dragging
     const [isDraggingSticker, setIsDraggingSticker] = useState(false);
-    const [draggingStickerId, setDraggingStickerId] = useState<string | null>(null);
+    const [draggingStickerId, setDraggingStickerId] = useState<string | null>(
+      null
+    );
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const [dragStartPosition, setDragStartPosition] = useState({ x: 0, y: 0 });
-    const [localStickerData, setLocalStickerData] = useState<Record<string, Sticker>>({});
+    const [isNewlyPlacedSticker, setIsNewlyPlacedSticker] = useState(false);
+    const [localStickerData, setLocalStickerData] = useState<
+      Record<string, Sticker>
+    >({});
     const [localStickerOrder, setLocalStickerOrder] = useState<string[]>([]);
 
     // Loupe configuration
@@ -166,7 +178,8 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
 
     // Helper function to generate sticker IDs
     const generateStickerId = useCallback(
-      () => `sticker_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+      () =>
+        `sticker_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
       []
     );
 
@@ -181,7 +194,12 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
           onFocusedStickerChange(null);
         }
       }
-    }, [editingStickerId, focusedStickerId, localStickerData, onFocusedStickerChange]);
+    }, [
+      editingStickerId,
+      focusedStickerId,
+      localStickerData,
+      onFocusedStickerChange,
+    ]);
 
     // Sync local sticker data with props when not dragging
     useEffect(() => {
@@ -216,23 +234,36 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
         document.removeEventListener('mousedown', handleGlobalMouseDown, true);
     }, []);
 
-    // Clear focused sticker when toolbar action changes (but not from toolbar interactions)
+    // Clear focused sticker when toolbar action changes to different sticker type
     useEffect(() => {
-      if (!isToolbarInteractionRef.current) {
-        setFocusedStickerId(null);
-        setEditingStickerId(null);
+      // Only check if there's a focused sticker
+      if (focusedStickerId) {
+        // Get the type of the currently focused sticker
+        const focusedSticker = localStickerData[focusedStickerId];
+        if (focusedSticker) {
+          // Determine expected toolbar action for this sticker type
+          let expectedAction = '';
+          if (focusedSticker.type === 'text') {
+            expectedAction = 'text';
+          } else if (focusedSticker.type === 'dot') {
+            expectedAction = 'sticker-dot';
+          } else if (focusedSticker.type === 'twin-check') {
+            expectedAction = 'sticker-twin-check';
+          }
+          
+          // Clear focus if toolbar action doesn't match the focused sticker type
+          if (selectedToolbarAction !== expectedAction) {
+            setFocusedStickerId(null);
+            setEditingStickerId(null);
+          }
+        }
       }
-    }, [selectedToolbarAction]);
-
+    }, [selectedToolbarAction, focusedStickerId, localStickerData]);
 
     // Global event handlers for sticker dragging
     useEffect(() => {
       const handleGlobalMouseMove = (e: MouseEvent) => {
-        if (
-          isDraggingSticker &&
-          draggingStickerId &&
-          contactSheetRef.current
-        ) {
+        if (isDraggingSticker && draggingStickerId && contactSheetRef.current) {
           const contactSheetRect =
             contactSheetRef.current.getBoundingClientRect();
           const mouseX = e.clientX - contactSheetRect.left;
@@ -291,14 +322,20 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
               Math.abs(currentSticker.left - dragStartPosition.x) < tolerance &&
               Math.abs(currentSticker.top - dragStartPosition.y) < tolerance;
 
-            if (didNotMove && currentSticker.type === selectedStickerType) {
-              // Delete the sticker and commit to parent
+            if (
+              didNotMove &&
+              currentSticker.type === selectedStickerType &&
+              isNewlyPlacedSticker
+            ) {
+              // Delete the newly placed sticker that wasn't moved
               const updatedStickerData = { ...localStickerData };
               delete updatedStickerData[draggingStickerId];
               // Remove sticker from order as well
-              const updatedOrder = localStickerOrder.filter(id => id !== draggingStickerId);
+              const updatedOrder = localStickerOrder.filter(
+                id => id !== draggingStickerId
+              );
               setLocalStickerOrder(updatedOrder);
-              
+
               if (onStickerDataChange) {
                 onStickerDataChange(updatedStickerData, updatedOrder);
               }
@@ -318,6 +355,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
 
         setIsDraggingSticker(false);
         setDraggingStickerId(null);
+        setIsNewlyPlacedSticker(false);
       };
 
       window.addEventListener('mousemove', handleGlobalMouseMove);
@@ -336,6 +374,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
       dragStartPosition,
       selectedToolbarAction,
       onStickerDataChange,
+      isNewlyPlacedSticker,
     ]);
 
     // Internal sticker mouse down handler
@@ -348,6 +387,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
 
       setIsDraggingSticker(true);
       setDraggingStickerId(stickerId);
+      setIsNewlyPlacedSticker(false); // This is an existing sticker being clicked
 
       // Store the initial position of the sticker being dragged
       const contactSheetRect = contactSheetRef.current?.getBoundingClientRect();
@@ -428,13 +468,19 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
       const target = event.target as Element;
       const isClickingOnSticker = target.closest('[data-sticker-id]') !== null;
       
+      // If clicking on a sticker, the sticker's onMouseDown should have called stopPropagation
+      // This handler should not run for sticker clicks
+      if (isClickingOnSticker) {
+        return;
+      }
+
       // Check if it's a sticker mode or text mode
       if (
         selectedToolbarAction.startsWith('sticker-') ||
         selectedToolbarAction === 'text'
       ) {
-        // If a sticker is already focused and we're NOT clicking on another sticker, unfocus it
-        if (focusedStickerId && !isClickingOnSticker) {
+        // If a sticker is already focused, unfocus it (since we're not clicking on a sticker)
+        if (focusedStickerId) {
           // Save text if we're currently editing a text sticker
           if (
             editingStickerId &&
@@ -459,11 +505,6 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
 
           setFocusedStickerId(null);
           setEditingStickerId(null); // Also clear editing state
-          return;
-        }
-        
-        // If clicking on a sticker, let the sticker handle it - don't place a new one
-        if (isClickingOnSticker) {
           return;
         }
 
@@ -526,18 +567,20 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
           onStickerDataChange(updatedStickerData, updatedStickerOrder);
         }
 
-        // Focus the newly created sticker with a small delay to ensure rendering
-        setTimeout(() => {
-          setFocusedStickerId(newStickerId);
-          // For text stickers, immediately start editing
-          if (stickerType === 'text') {
+        // Mark this as a newly placed sticker for potential deletion
+        setIsNewlyPlacedSticker(true);
+
+        // For text stickers, focus immediately and start editing
+        if (stickerType === 'text') {
+          setTimeout(() => {
+            setFocusedStickerId(newStickerId);
             setEditingStickerId(newStickerId);
             // Notify parent that text action should be selected
-            if (onActionChange) {
-              onActionChange('text');
+            if (onSelectedActionChange) {
+              onSelectedActionChange('text');
             }
-          }
-        }, 0);
+          }, 0);
+        }
       } else {
         // No sticker tool selected, deselect any focused stickers
         if (focusedStickerId || editingStickerId) {
@@ -683,7 +726,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
             localStickerOrder.map(stickerId => {
               const sticker = localStickerData[stickerId];
               if (!sticker) return null;
-              
+
               const stickerConfig = STICKER_CONFIGS[sticker.type];
               if (!stickerConfig) return null;
 
@@ -757,7 +800,10 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
                           };
                           setLocalStickerData(updatedStickerData);
                           if (onStickerDataChange) {
-                            onStickerDataChange(updatedStickerData, localStickerOrder);
+                            onStickerDataChange(
+                              updatedStickerData,
+                              localStickerOrder
+                            );
                           }
                           setEditingStickerId(null);
                           setFocusedStickerId(null);
@@ -778,7 +824,10 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
                         };
                         setLocalStickerData(updatedStickerData);
                         if (onStickerDataChange) {
-                          onStickerDataChange(updatedStickerData, localStickerOrder);
+                          onStickerDataChange(
+                            updatedStickerData,
+                            localStickerOrder
+                          );
                         }
                         setEditingStickerId(null);
                         setFocusedStickerId(null);
@@ -788,7 +837,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
 
                         // Always focus this sticker when clicked (handles sticker-to-sticker transitions)
                         setFocusedStickerId(stickerId);
-                        
+
                         if (isFocused && !isEditing) {
                           // If this sticker was already focused but not editing: start dragging
                           handleStickerMouseDown(stickerId, event);
@@ -842,7 +891,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
 
                     // Always focus this sticker when clicked (handles sticker-to-sticker transitions)
                     setFocusedStickerId(stickerId);
-                    
+
                     if (isFocused) {
                       // If this sticker was already focused: start dragging
                       handleStickerMouseDown(stickerId, event);
