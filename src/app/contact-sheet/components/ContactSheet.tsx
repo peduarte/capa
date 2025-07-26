@@ -844,7 +844,6 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
               const stickerConfig = STICKER_CONFIGS[sticker.type];
               if (!stickerConfig) return null;
 
-              const isFocused = getFocusedStickerId() === stickerId;
 
               // Handle text stickers differently
               if (sticker.type === 'text') {
@@ -872,9 +871,7 @@ export const ContactSheet = React.forwardRef<HTMLDivElement, ContactSheetProps>(
                         left: '4px',
                         minWidth: `${stickerConfig.width}px`,
                         minHeight: `${Math.max(stickerConfig.height, 32)}px`,
-                        cursor: isEditing
-                          ? 'text'
-                          : 'grab',
+                        cursor: isEditing ? 'text' : 'grab',
                         zIndex: 10,
                         color: sticker.color || TEXT_COLORS.white,
                         fontSize: '18px',
